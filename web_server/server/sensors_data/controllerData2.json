@@ -1,0 +1,35 @@
+{
+  "phRead": "10234.00",
+  "waterQualityRead": "5324.73",
+  "tempRead": "50324.00",
+  "humidityRead": "65.00",
+  "lightResistorRead": "4234234",
+  "lightSensorRead": "50423.00",
+  "lowWaterRead": "1234.00",
+
+  "waterLvlMinPlanRead": "1.00",
+  "waterLvlMaxPlanRead": "0.00",
+  "waterLvlMinMezRead": "1.00",
+  "waterLvlMaxMezRead": "1.00",
+  "waterLvlMinResRead": "0.00",
+
+  "statusBombaAcida": "0",
+  "statusBombaAlcalina": "0",
+  "statusBombaMezcla": "1",
+  "statusBombaNutrientes": "0",
+  "statusBombaMezclaResiduos": "0",
+  "statusBombaResiduos": "1",
+
+  "pHOptMin": "5.5",
+  "pHOptMax": "6.5",
+  "TDSOptMin": "800.0",
+  "TDSOptMax": "1200.0",
+  "HumOptMin": "60.0",
+  "HumOptMax": "75.0",
+  "TempOptMin": "14",
+  "TempOptMax": "18",
+  "LumOptMin": "10000",
+  "LumOptMax": "20000",
+  "LumOptHrsMin": "14",
+  "LumOptHrsMax": "16"
+}

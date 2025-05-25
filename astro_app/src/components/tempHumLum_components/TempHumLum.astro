@@ -1,0 +1,11 @@
+---
+import Luminosity from "./Luminosity";
+import Temperature from "./Temperature";
+import Humidity from "./Humidity";
+---
+
+<section class="temp-hum-lum-container w-full h-full flex flex-row justify-center items-center bg-theme-cream gap-3">
+    <Temperature client:only="react"/>
+    <Humidity client:only="react"/>
+    <Luminosity client:only="react"/>
+</section>

@@ -1,0 +1,22 @@
+---
+interface Props {
+  href?: string;
+  icon: string;
+  text: string;
+}
+
+const { href, icon, text } = Astro.props;
+---
+<li>
+    <a
+        id="asideItem"
+        class="flex gap-4 rounded-lg text-gray-900 hover:bg-gray-100 items-center py-3 px-5 font-medium transition duration-300"
+        href={href}  
+    >
+    <img src={icon} alt={text} class="w-6 h-6" />
+    <span>{text}</span>
+    <slot />
+    </a>
+</li>
+
+

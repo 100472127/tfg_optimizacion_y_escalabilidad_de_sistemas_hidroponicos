@@ -1,0 +1,45 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+import Ph from '../../components/ph_components/Ph';
+import WaterLvl from '../../components/waterLvl_components/WaterLvl';
+import TempHumLum from '../../components/tempHumLum_components/TempHumLum.astro';
+import PumpControl from '../../components/pumpControl_components/PumpControl';
+import Tds from '../../components/tds_components/Tds';
+import Timers from '../../components/timers_components/Timers';
+
+
+import DataUpdater from '../../components/DataUpdater';
+
+
+const { id } = Astro.params;
+
+export function getStaticPaths() {
+    return [
+        { params: { id: '1' } },
+        { params: { id: '2' } },
+    ];
+}
+---
+
+<Layout title="Cuadro de Control de los Cultivos Hidropónicos">
+    <div id="pageContainer" class="bg-theme-cream rounded-lg w-full h-full p-2 overflow-y-hidden">
+        <DataUpdater client:only="react" id={id} />
+        
+        <Ph client:only="react"/>
+        <WaterLvl client:only="react"/>
+        <TempHumLum />
+        <PumpControl client:only="react"/>
+        <Tds client:only="react"/>
+        <Timers client:only="react"/>
+    </div>
+</Layout>
+
+<style>
+    #pageContainer {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: calc(var(--spacing) * 3);
+    }
+</style>

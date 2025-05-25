@@ -1,0 +1,42 @@
+---
+import './src/styles/global.css'
+import AsideMenu from '../components/asideMenu_components/AsideMenu.astro';
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Cuadro de Control de los Cultivos Hidropónicos" />
+		<meta name="author" content="Diego Montero Solano" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body>
+		<div id="app" class="relative h-screen p-2 gap-2 flex items-stretch">
+			<aside class="[grid-area:aside] rounded-lg flex-col flex overflow-y-auto bg-theme-cream">
+				<AsideMenu/>
+			</aside>
+			<main class="[grid-area:main]bg-theme-cream rounded-lg flex-col overflow-y-auto h-auto">	
+				<slot />
+			</main>
+		</div>
+	</body>
+</html>
+<style>
+	#app{
+		display: grid;
+		grid-template-areas: 
+		"aside main";
+		grid-template-columns: 300px 1fr;
+	}
+</style>
+<style is:global>
+	html {
+		background: #000;
+	}
+</style>
