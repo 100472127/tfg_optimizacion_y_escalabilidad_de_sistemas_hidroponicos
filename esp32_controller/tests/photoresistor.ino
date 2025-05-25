@@ -7,9 +7,15 @@ void setup() {
 
 void loop() {
     // Mide un valor entre 0 y 4095
-    int rawValue = analogRead(PHOTORESISTOR_PIN) / 4095.0 * 100;
+    int rawValue = analogRead(PHOTORESISTOR_PIN);
 
-    Serial.print("Valor leído de la fotorresistencia: ");
-    Serial.println(rawValue);
+    // Conversión del valor leído a porcentaje de luz (0 a 100%)
+    float lightResistorValue = rawValue / 4095.0 * 100;
+
+    Serial.print("Lectura ADC: ");
+    Serial.print(rawValue);
+    Serial.print(" | PH: ");
+    Serial.println(lightResistorValue, 2);
+
     delay(2000);
 }

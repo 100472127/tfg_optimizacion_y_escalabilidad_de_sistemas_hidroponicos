@@ -4,7 +4,7 @@ const int bombas[NUM_BOMBAS] = {15, 2, 4, 16, 17, 5};
 
 void setup() {
     Serial.begin(9600);
-    Serial.println("Inicio de prueba de las 6 bombas de agua ...");
+    Serial.println("Iniciando prueba de las 6 bombas de agua ...");
 
     // Configurar cada pin como salida
     for (int i = 0; i < NUM_BOMBAS; i++) {
