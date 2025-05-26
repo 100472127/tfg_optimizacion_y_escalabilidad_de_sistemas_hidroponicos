@@ -50,7 +50,7 @@
 String ip_value;
 
 // URL del servidor principal
-const char* serverUrl = "http://192.168.1.140:3000";
+const char* serverUrl = "http://192.168.73.200:3000";
 
 // Creamos un pequeño servidor web local en el puerto 80
 WebServer server(80);

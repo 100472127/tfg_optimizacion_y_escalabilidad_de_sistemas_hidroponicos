@@ -1,6 +1,6 @@
 #include <Servo.h>
 
-#define SERVOPIN 19
+#define SERVOPIN 14
 
 Servo miServo;
 

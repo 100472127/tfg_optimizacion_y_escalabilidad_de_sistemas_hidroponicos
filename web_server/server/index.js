@@ -11,8 +11,18 @@ const port = process.env.PORT ?? 3000;
 const app = express();
 
 // Permitimos peticiones desde la URL donde se alojará la página web hecha con astro
+const allowedOrigins = [
+    'http://localhost:4321', // URL de desarrollo
+    'http://192.168.73.200:4321', // URL de producción
+];
 app.use(cors({
-    origin: 'http://localhost:4321'
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }   
 }));
 
 // Variables para el manejo de ficheros

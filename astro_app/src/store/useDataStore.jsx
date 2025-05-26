@@ -7,7 +7,7 @@ const useDataStore = create((set) => ({
   actualController: null,
   setActualController: (newController) => set({ actualController: newController }),
 
-  url: "http://localhost:3000"
+  url: "http://192.168.73.200:3000"
 }));
 
 export default useDataStore;
