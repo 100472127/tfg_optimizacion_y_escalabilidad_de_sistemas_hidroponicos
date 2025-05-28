@@ -11,10 +11,11 @@ export default function Temperature() {
     useEffect(() => {
         const interval = setInterval(() => {
             const currentData = useDataStore.getState().data;
-            setTempRead(parseFloat(currentData?.tempRead).toFixed(1));
-            setTempOptMin(parseFloat(currentData?.TempOptMin));
-            setTempOptMax(parseFloat(currentData?.TempOptMax)); 
-
+            if (currentData != null){
+                setTempRead(parseFloat(currentData?.tempRead).toFixed(1));
+                setTempOptMin(parseFloat(currentData?.TempOptMin));
+                setTempOptMax(parseFloat(currentData?.TempOptMax)); 
+            }
         }, 1000);
 
         return () => clearInterval(interval);
@@ -36,7 +37,13 @@ export default function Temperature() {
         let tempMin, tempMax;
         do {
             tempMin = prompt("Ingrese el mínimo del rango óptimo de temperatura (número entre 0 y 100 o 'auto' que pondrá un valor por defecto):");
+            if (tempMin === null) {
+                return;
+            }
             tempMax = prompt("Ingrese el máximo del rango óptimo de temperatura (número entre 0 y 100 o 'auto' que pondrá un valor por defecto):");
+            if (tempMax === null) {
+                return;
+            }
         
             const isAutoMin = tempMin?.toLowerCase() === "auto";
             const isAutoMax = tempMax?.toLowerCase() === "auto";
@@ -132,13 +139,13 @@ export default function Temperature() {
                             onClick={() => handleButtonClick()}
                             className="w-15 h-9 bg-theme-cream rounded-lg shadow-sm shadow-gray-800 flex items-center justify-center hover:bg-theme-dark-green transition"
                         >
-                            {TempOptMin !== null ? TempOptMin : "min"}
+                            {TempOptMin != null ? TempOptMin : "min"}
                         </button> 
                         <button
                             onClick={() => handleButtonClick()}
                             className="w-15 h-9 bg-theme-cream rounded-lg shadow-sm shadow-gray-800 flex items-center justify-center hover:bg-theme-dark-green transition"
                         >
-                            {TempOptMax !== null ? TempOptMax : "min"}
+                            {TempOptMax != null ? TempOptMax : "min"}
                         </button>                        
                     </div>
                 </div>

@@ -17,11 +17,11 @@ const { title } = Astro.props;
 		<title>{title}</title>
 	</head>
 	<body>
-		<div id="app" class="relative h-screen p-2 gap-2 flex items-stretch">
+		<div id="app" class="relative w-full h-screen p-1 gap-1 flex items-stretch">
 			<aside class="[grid-area:aside] rounded-lg flex-col flex overflow-y-auto bg-theme-cream">
 				<AsideMenu/>
 			</aside>
-			<main class="[grid-area:main]bg-theme-cream rounded-lg flex-col overflow-y-auto h-auto">	
+			<main class=" [grid-area:main] bg-theme-cream rounded-lg h-full overflow-y-auto">	
 				<slot />
 			</main>
 		</div>
@@ -32,7 +32,8 @@ const { title } = Astro.props;
 		display: grid;
 		grid-template-areas: 
 		"aside main";
-		grid-template-columns: 300px 1fr;
+		grid-template-columns: 200px 1fr;
+        height: 100vh
 	}
 </style>
 <style is:global>

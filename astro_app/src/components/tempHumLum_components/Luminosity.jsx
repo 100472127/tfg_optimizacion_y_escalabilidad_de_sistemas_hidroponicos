@@ -14,12 +14,14 @@ export default function Luminosity() {
     useEffect(() => {
         const interval = setInterval(() => {
             const currentData = useDataStore.getState().data;
-            setLightSensorRead(parseFloat(currentData?.lightSensorRead).toFixed(1));
-            setLightResistorRead(currentData?.lightResistorRead);
-            setLumOptMin(parseFloat(currentData?.LumOptMin)); 
-            setLumOptMax(parseFloat(currentData?.LumOptMax).toFixed(1));
-            setLumOptHrsMin(currentData?.LumOptHrsMin);
-            setLumOptHrsMax(currentData?.LumOptHrsMax); 
+            if (currentData !== null){
+                setLightSensorRead(parseFloat(currentData?.lightSensorRead).toFixed(1));
+                setLightResistorRead(currentData?.lightResistorRead);
+                setLumOptMin(parseFloat(currentData?.LumOptMin)); 
+                setLumOptMax(parseFloat(currentData?.LumOptMax).toFixed(1));
+                setLumOptHrsMin(currentData?.LumOptHrsMin);
+                setLumOptHrsMax(currentData?.LumOptHrsMax); 
+            }
         }, 1000);
 
         return () => clearInterval(interval);
@@ -32,10 +34,22 @@ export default function Luminosity() {
         do {
             if(type === "luminosity") {
                 minValue = prompt("Ingrese el mínimo del rango óptimo de luminosidad (número entre 0 y 50000 o 'auto' que pondrá un valor por defecto):");
+                if (minValue === null) {
+                    return;
+                }
                 maxValue = prompt("Ingrese el máximo del rango óptimo de temperatura (número entre 0 y 50000 o 'auto' que pondrá un valor por defecto):");
+                if (maxValue === null) {
+                    return;
+                }
             } else{
                 minValue = prompt("Ingrese el mínimo del rango óptimo de horas de luz diarias (número entre 0 y 24 o 'auto' que pondrá un valor por defecto):");
+                if (minValue === null) {
+                    return;
+                }
                 maxValue = prompt("Ingrese el máximo del rango óptimo de horas de luz diarias (número entre 0 y 24 o 'auto' que pondrá un valor por defecto):");
+                if (maxValue === null) {
+                    return;
+                }
             }
             const maxValueNum = type === "luminosity" ? 50000 : 24;
         
@@ -121,13 +135,13 @@ export default function Luminosity() {
                         <p>Optimal luminosity</p>
                         <div id="min-max-container" className="flex flex-row items-center w-full justify-center gap-4">
                             <button
-                                onClick={() => handleButtonClick()}
+                                onClick={() => handleButtonClick("luminosity")}
                                 className="w-15 h-9 bg-theme-cream rounded-lg shadow-sm shadow-gray-800 flex items-center justify-center hover:bg-theme-dark-green transition"
                             >
                                 {LumOptMin !== null ? LumOptMin : "min"}
                             </button>
                             <button
-                                onClick={() => handleButtonClick()}
+                                onClick={() => handleButtonClick("luminosity")}
                                 className="w-15 h-9 bg-theme-cream rounded-lg shadow-sm shadow-gray-800 flex items-center justify-center hover:bg-theme-dark-green transition"
                             >
                                 {LumOptMax !== null ? LumOptMax : "max"}
@@ -138,13 +152,13 @@ export default function Luminosity() {
                         <p>Optimal light hrs</p>
                         <div id="min-max-container" className="flex flex-row items-center w-full justify-center gap-4">
                             <button
-                                onClick={() => handleButtonClick()}
+                                onClick={() => handleButtonClick("lightHrs")}
                                 className="w-15 h-9 bg-theme-cream rounded-lg shadow-sm shadow-gray-800 flex items-center justify-center hover:bg-theme-dark-green transition"
                             >
                                 {LumOptHrsMin !== null ? LumOptHrsMin : "min"}
                             </button>
                             <button
-                                onClick={() => handleButtonClick()}
+                                onClick={() => handleButtonClick("lightHrs")}
                                 className="w-15 h-9 bg-theme-cream rounded-lg shadow-sm shadow-gray-800 flex items-center justify-center hover:bg-theme-dark-green transition"
                             >
                                 {LumOptHrsMax !== null ? LumOptHrsMax : "max"}

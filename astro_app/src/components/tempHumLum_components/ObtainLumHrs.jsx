@@ -10,7 +10,8 @@ export default function ObtainLumHrs() {
             const id = useDataStore.getState().actualController;
             if (id !== null){
                 try {
-                    const response = await fetch(`http://localhost:3000/horasLuz/${id}`);
+                    const urlGet = useDataStore.getState().url + "/horasLuz/" + id;
+                    const response = await fetch(urlGet);
                     if (!response.ok) {
                         throw new Error(`Error al obtener datos de LumHrs: ${response.status}`);
                     }

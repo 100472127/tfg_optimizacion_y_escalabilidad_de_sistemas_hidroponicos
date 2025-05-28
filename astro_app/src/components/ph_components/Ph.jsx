@@ -12,11 +12,13 @@ export default function Ph() {
     useEffect(() => {
         const interval = setInterval(() => {
             const currentData = useDataStore.getState().data;
-            setPhRead(currentData?.phRead);
-            setPHOptMin(currentData?.pHOptMin);
-            setPHOptMax(currentData?.pHOptMax); 
-            setTdsOptMin(currentData?.TDSOptMin);
-            setTdsOptMax(currentData?.TDSOptMax);
+            if (currentData !== null){
+                setPhRead(currentData?.phRead);
+                setPHOptMin(currentData?.pHOptMin);
+                setPHOptMax(currentData?.pHOptMax); 
+                setTdsOptMin(currentData?.TDSOptMin);
+                setTdsOptMax(currentData?.TDSOptMax);
+            }
         }, 1000);
 
         return () => clearInterval(interval);
@@ -27,7 +29,13 @@ export default function Ph() {
         let pHMin, pHMax;
         do {
             pHMin = prompt("Ingrese el mínimo del rango óptimo de pH (número entre 0 y 14 o 'auto' que pondrá un valor por defecto):");
+            if (pHMin === null) {
+                return;
+            }
             pHMax = prompt("Ingrese el máximo del rango óptimo de pH (número entre 0 y 14 o 'auto' que pondrá un valor por defecto):");
+            if (pHMax === null) {
+                return;
+            }
         
             const isAutoMin = pHMin?.toLowerCase() === "auto";
             const isAutoMax = pHMax?.toLowerCase() === "auto";

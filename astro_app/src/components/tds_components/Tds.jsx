@@ -12,11 +12,13 @@ export default function Tds() {
     useEffect(() => {
         const interval = setInterval(() => {
             const currentData = useDataStore.getState().data;
-            setWaterQualityRead(currentData?.waterQualityRead);
-            setTDSOptMin(currentData?.TDSOptMin);
-            setTDSOptMax(currentData?.TDSOptMax); 
-            setPHOptMin(currentData?.pHOptMin);
-            setPHOptMax(currentData?.pHOptMax);    
+            if (currentData !== null){
+                setWaterQualityRead(currentData?.waterQualityRead);
+                setTDSOptMin(currentData?.TDSOptMin);
+                setTDSOptMax(currentData?.TDSOptMax); 
+                setPHOptMin(currentData?.pHOptMin);
+                setPHOptMax(currentData?.pHOptMax);  
+            }
         }, 1000);
 
         return () => clearInterval(interval);
@@ -28,7 +30,13 @@ export default function Tds() {
         let tdsMin, tdsMax;
         do {
             tdsMin = prompt("Ingrese el mínimo del rango óptimo de TDS (número entre 0 y 2000 o 'auto' que pondrá un valor por defecto):");
+            if (tdsMin === null) {
+                return;
+            }
             tdsMax = prompt("Ingrese el máximo del rango óptimo de TDS (número entre 0 y 2000 o 'auto' que pondrá un valor por defecto):");
+            if (tdsMax === null) {
+                return;
+            }
         
             const isAutoMin = tdsMin?.toLowerCase() === "auto";
             const isAutoMax = tdsMax?.toLowerCase() === "auto";

@@ -15,7 +15,8 @@ export default function DataUpdater({ id }) {
         // Función para obtener datos del servidor para el controlador actual
         const fetchData = async () => {
             try {
-                const response = await fetch(`http://192.168.73.200:3000/data/${id}`);
+                const urlGet = useDataStore.getState().url + "/data/" + id;
+                const response = await fetch(urlGet);
                 if (!response.ok) {
                     throw new Error(`Error al obtener datos: ${response.status}`);
                 }

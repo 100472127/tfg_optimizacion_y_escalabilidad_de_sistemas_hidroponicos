@@ -7,7 +7,7 @@ const useDataStore = create((set) => ({
   actualController: null,
   setActualController: (newController) => set({ actualController: newController }),
 
-  url: "http://192.168.73.200:3000"
+  url: "http://localhost:3000"// Ip y puerto del servidor Node.js que corre en la Raspberry Pi
 }));
 
 export default useDataStore;

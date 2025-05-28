@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import PropTypes from "prop-types"; // Importamos PropTypes para validación
+import PropTypes from "prop-types";
+import useDataStore from "../../store/useDataStore";
 
 const MonitoringItem = ({ id }) => {
     const [ph, setPh] = useState(null);
@@ -9,7 +10,7 @@ const MonitoringItem = ({ id }) => {
     const [light, setLight] = useState(null);
     const [lowWater, setLowWater] = useState(null);
 
-    const url = `http://localhost:3000/data/${id}`;
+    const url = useDataStore.getState().url + "/data/" + id;
 
     useEffect(() => {
         const obtainData = async () => {

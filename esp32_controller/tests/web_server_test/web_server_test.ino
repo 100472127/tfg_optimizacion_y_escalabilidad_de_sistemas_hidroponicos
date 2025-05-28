@@ -48,8 +48,26 @@ void sendIP(){
     }
 }
 
+String extractValues() {
+    String jsonString = server.arg("plain");
+    String value = "";
+    // Deserializar el JSON para extraer el valor
+    DynamicJsonDocument doc(200);
+    DeserializationError error = deserializeJson(doc, jsonString);
+    if (!error) {
+        value = doc["value"].as<String>();
+    }
+    return value;
+}
+
 void handlePetition() {
-    server.send(200, "application/json", "{\"mensaje\":\"Petición recibida correctamente\"}");
+    String route = server.uri();
+    String range = extractValues();
+
+    Serial.println("Petición recibida: " + route + "\t valor_recibido: " + range);
+    
+    String response = "{\"mensaje\":\"Petición recibida correctamente\"}";
+    server.send(200, "application/json", response);
 }
 
 // SETUP inicial del sistema

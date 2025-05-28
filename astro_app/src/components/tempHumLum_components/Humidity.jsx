@@ -29,7 +29,13 @@ export default function Humidity() {
         let humMin, humMax;
         do {
             humMin = prompt("Ingrese el mínimo del rango óptimo de humedad (número entre 0 y 100 o 'auto' que pondrá un valor por defecto):");
+            if (humMin === null) {
+                return;
+            }
             humMax = prompt("Ingrese el máximo del rango óptimo de humedad (número entre 0 y 100 o 'auto' que pondrá un valor por defecto):");
+            if (humMax === null) {
+                return;
+            }
         
             const isAutoMin = humMin?.toLowerCase() === "auto";
             const isAutoMax = humMax?.toLowerCase() === "auto";
