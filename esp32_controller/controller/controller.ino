@@ -1159,27 +1159,27 @@ void ifDayChanged()
 
 void leerSensorMinPlan()
 {
-    dataSensorsInfo[5] = !digitalRead(WATERLVLSENSORPIN);
+    dataSensorsInfo[5] = digitalRead(WATERLVLSENSORPIN);
 }
 
 void leerSensorMaxPlan()
 {
-    dataSensorsInfo[10] = !digitalRead(WATERLVLSENSORMAX);
+    dataSensorsInfo[10] = digitalRead(WATERLVLSENSORMAX);
 }
 
 void leerSensorMinMez()
 {
-    dataSensorsInfo[7] = !digitalRead(WATERLVLSENSORMEZMIN);
+    dataSensorsInfo[7] = digitalRead(WATERLVLSENSORMEZMIN);
 }
 
 void leerSensorMaxMez()
 {
-    dataSensorsInfo[8] = !digitalRead(WATERLVLSENSORMEZMAX);
+    dataSensorsInfo[8] = digitalRead(WATERLVLSENSORMEZMAX);
 }
 
 void leerSensorRes()
 {
-    dataSensorsInfo[9] = !digitalRead(WATERLVLSENSORRESMAX);
+    dataSensorsInfo[9] = digitalRead(WATERLVLSENSORRESMAX);
 }
 
 void controlLiquidos()

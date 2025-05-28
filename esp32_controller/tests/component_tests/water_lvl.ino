@@ -17,11 +17,11 @@ void loop() {
     Serial.print("Agua detectada: ");
 
     for (int i = 0; i < 5; i++) {
-        sensorStates[i] = !digitalRead(sensorPins[i]);
+        sensorStates[i] = digitalRead(sensorPins[i]);
         Serial.print(sensorStates[i] ? "True" : "False");
         if (i < 4) Serial.print(" | ");
     }
     Serial.println();
 
-    delay(2000); // Esperar 2 segundos antes de la siguiente lectura
+    delay(2000);
 }

@@ -1,13 +1,13 @@
-#include <Servo.h>
+#include <ESP32Servo.h>
 
-#define SERVOPIN 14
+#define SERVO_PIN 14
 
 Servo miServo;
 
 void setup() {
     Serial.begin(9600);
     Serial.println("Iniciando prueba del servomotor ...");
-    miServo.attach(SERVOPIN);
+    miServo.attach(SERVO_PIN);
 }
 
 void loop() {

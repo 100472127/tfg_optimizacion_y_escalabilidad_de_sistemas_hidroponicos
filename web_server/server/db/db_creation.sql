@@ -5,12 +5,13 @@ USE sensor_data_db;
 -- Crear la tabla de lecturas
 CREATE TABLE IF NOT EXISTS sensor_readings (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    phRead DECIMAL(5,2),
-    waterQualityRead DECIMAL(6, 2),
-    tempRead DECIMAL(5,2),
-    humidityRead DECIMAL(5,2),
-    lightResistorRead DECIMAL(8,2),
-    lightSensorRead DECIMAL(8,2),
+    controller_id INT NOT NULL,
+    ph_read DECIMAL(5,2),
+    water_quality_read DECIMAL(6, 2),
+    temp_read DECIMAL(5,2),
+    humidity_read DECIMAL(5,2),
+    light_resistor_read DECIMAL(8,2),
+    light_sensor_read DECIMAL(8,2),
     inserted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME DEFAULT NULL
 );
