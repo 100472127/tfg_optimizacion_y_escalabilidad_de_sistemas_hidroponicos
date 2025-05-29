@@ -45,27 +45,27 @@ const MonitoringItem = ({ id }) => {
             <h3 className="font-bold text-3xl text-center h-1/4">Controlador {id}</h3>
 
             <div className="grid grid-cols-3 gap-2 text-center text-xl justify-center h-3/4">
-                <div className="bg-white rounded flex flex-col gap-2 shadow">
+                <div className="bg-white rounded flex flex-col gap-2 shadow text-[1.2vw]">
                     <p>PH</p>
                     <p>{ph !== null ? ph : "Cargando..."}</p>
                 </div>
-                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow">
+                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow text-[1.2vw]">
                     <p>Temperatura</p>
                     <p>{temp !== null ? `${temp} °C` : "Cargando..."}</p>
                 </div>
-                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow">
+                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow text-[1.2vw]">
                     <p>Humedad</p>
                     <p>{humidity !== null ? `${humidity} %` : "Cargando..."}</p>
                 </div>
-                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow">
+                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow text-[1.2vw]">
                     <p>Calidad del Agua</p>
                     <p>{waterQuality !== null ? waterQuality : "Cargando..."}</p>
                 </div>
-                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow">
+                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow text-[1.2vw]">
                     <p>Luz</p>
                     <p>{light !== null ? light : "Cargando..."}</p>
                 </div>
-                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow">
+                <div className="bg-white p-2 flex flex-col gap-2 rounded shadow text-[1.2vw]">
                     <p>Nivel Bajo de Agua</p>
                     <p>{lowWater !== null ? (lowWater ? "Sí" : "No") : "Cargando..."}</p>
                 </div>

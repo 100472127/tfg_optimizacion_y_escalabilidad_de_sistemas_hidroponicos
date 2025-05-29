@@ -121,7 +121,7 @@ export default function Temperature() {
                         </div>
                     </div>
                     <div id="temperature-value-status" className=" w-auto h-full flex flex-col items-center">
-                        <p className={`text-4xl rounded-lg border-1 w-30 text-center p-2 mt-2 ${getStatusBgColor()}`}>
+                        <p className={`text-4xl rounded-lg border-1 w-30 text-center p-2 ml-3 mt-2 ${getStatusBgColor()}`}>
                             {tempStatus}
                         </p>
                         <div  className=" w-auto h-full flex items-center pl-5">

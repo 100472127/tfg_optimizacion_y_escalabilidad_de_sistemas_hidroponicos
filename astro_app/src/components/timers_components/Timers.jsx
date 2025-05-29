@@ -109,13 +109,16 @@ export default function Timers(){
     }
 
     const handleButtonSendPumpTimerClick = () => {
-        if(manualORauto === 0){
-            alert("El modo bomba está en manual, no se puede cambiar el temporizador de la bomba");
+        if(manualORauto == 0){
+            alert("El modo de control está en automático. Cambie a manual para controlar las bombas.");
         }
         else{
             let seconds;
             do {
                 seconds = prompt("Introduzca valor entre activaciones de la bomba en segundos, mínimo de 3600 segundos:");
+                if (seconds === null) {
+                    return;
+                }
                 const isValid = !isNaN(seconds) && parseFloat(seconds) >= 3600;
                 if (isValid) break;
                 alert("VALORES NO VÁLIDOS\nASEGURATE QUE EL VALOR ES MAYOR DE 3600 Y SOLO SON NUMEROS\nPOR FAVOR INTRODUZCALOS DE NUEVO");
@@ -139,6 +142,9 @@ export default function Timers(){
         let seconds;
         do {
             seconds = prompt("Introduzca valor entre activaciones de la bomba en segundos, mínimo de 60 segundos:");
+            if (seconds === null) {
+                return;
+            }
             const isValid = !isNaN(seconds) && parseFloat(seconds) >= 60;
             if (isValid) break;
             alert("VALORES NO VÁLIDOS\nASEGURATE QUE EL VALOR ES MAYOR DE 60 Y SOLO SON NUMEROS\nPOR FAVOR INTRODUZCALOS DE NUEVO");

@@ -73,7 +73,7 @@ export default function Tds() {
     return(
         <section className="tds-container w-full h-full flex flex-col items-center bg-theme-green rounded-lg pb-2 shadow-sm shadow-gray-800 gap-2">
             <h1 className="w-full h-auto text-4xl flex justify-center z-20 bg-theme-dark-green rounded-lg">Calidad del Agua</h1>
-            <div className="w-full h-auto flex justify-center items-center">
+            <div className="w-full h-full flex justify-center items-center">
                 <div className="tds-value-container h-full w-1/3 gap-2 flex flex-col items-center">    
                     <h1 className="w-full h-1/4 flex justify-center text-4xl">TDS</h1>
                     <div id="tds-value" className="w-40 h-15 text-center flex items-center justify-center text-5xl rounded-lg ">
