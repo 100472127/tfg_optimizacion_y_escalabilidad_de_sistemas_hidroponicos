@@ -6,3 +6,9 @@
     --color-theme-cream: #FEF9F9;
     --color-theme-dark-green: #E2E9D6;
 }
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}

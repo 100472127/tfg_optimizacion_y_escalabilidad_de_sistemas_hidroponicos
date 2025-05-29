@@ -98,7 +98,7 @@ export default function Tds() {
                         </div>
                     </div>
                 </div>
-                <div className="tds-graph-container h-55 w-2/3 flex justify-center items-center">
+                <div className="tds-graph-container h-auto w-2/3 flex justify-center items-center p-4">
                     <TdsChart client:only="react"/>
                 </div>
             </div>

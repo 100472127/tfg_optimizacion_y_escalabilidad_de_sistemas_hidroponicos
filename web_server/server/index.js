@@ -82,8 +82,9 @@ app.post('/ipAssignment', (req, res) => {
 
 // La página web pide la información de los sensores
 app.get('/data/:id', (req, res) => {
-    const id = req.params.id;               // Obtener el valor de la variable 'id' en la URL
-    const fileName = `${controllerDataPath}/controllerData${id}.json`;     // Nombre del archivo correspondiente al 'id'
+    // El valor de la variable 'id' se obtiene de la URL
+    const id = req.params.id;
+    const fileName = `${controllerDataPath}/controllerData${id}.json`;
 
     // Leer el archivo correspondiente
     fs.readFile(fileName, 'utf8', (err, data) => {
@@ -93,7 +94,7 @@ app.get('/data/:id', (req, res) => {
             res.status(500).send('Internal server Error');
         } else {
             // Si el archivo se lee correctamente, devolver los datos
-            res.json(JSON.parse(data));  // Parsear el JSON y enviarlo en la respuesta
+            res.json(JSON.parse(data));
         }
     });
 });
@@ -113,7 +114,7 @@ app.post('/data/:id', async (req, res) => {
         }
     });
 
-    // Guardamos los datos en la base de datos para futuras aplicaciones
+    // Guardamos los datos de los sensores en la base de datos para futuras aplicaciones
     try{
         const {
             phRead,
@@ -130,7 +131,6 @@ app.post('/data/:id', async (req, res) => {
             light_resistor_read, light_sensor_read
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
-
     
         await pool.execute(sql, [
             id,
@@ -143,11 +143,11 @@ app.post('/data/:id', async (req, res) => {
         ]);
 
         console.log("Datos insertados en la base de datos.");
-        res.status(200).send("OK");
+        res.status(200).send("Datos guardados correctamente");
 
     } catch (dbErr) {
         console.error("Error al insertar en la base de datos:", dbErr);
-        res.status(500).send("Error al guardar en la base de datos.");
+        res.status(500).send("Internal server Error");
     }
 });
 
@@ -176,7 +176,6 @@ function getControllerURL(id, petition) {
 // Envía una petición POST (petition) con información (dataToSend) a un controlador (controllerID)
 async function sendPetition(type, controllerID, dataToSend, petition) {
     const controllerURL = getControllerURL(controllerID, petition);
-    console.log(controllerURL);
     if (!controllerURL) {
         return "ERROR"; // Si no se encuentra una URL, retornamos error
     }
@@ -184,12 +183,14 @@ async function sendPetition(type, controllerID, dataToSend, petition) {
         if (type === "POST") {
             const res = await axios.post(controllerURL, dataToSend);
             return res.data;
-        } else {
+        } else if (type == "GET"){
             const res = await axios.get(controllerURL, dataToSend);
             return res.data;
-        }        
+        } else {
+            return "ERROR"; // Si el tipo no es POST ni GET, retornamos error
+        }     
     } catch (error) {
-        console.error(`Error al enviar ${type} a`, controllerURL, error.message);
+        console.error(`Error al enviar ${type} a `, controllerURL, error.message);
         return "ERROR";
     }
 }

@@ -117,14 +117,14 @@ export default function Luminosity() {
                     </div>
                     <div className="w-full h-1/2 flex flex-col justify-center items-center">
                         <div id="luminosity-resistor-container" className="w-full h-1/2 flex flex-row pl-5 pr-5 items-center justify-between">
-                            <p className="w-auto h-auto text-xl">Resistencia lumínica</p>
-                            <p className="w-auto h-auto text-center flex items-center justify-center text-xl p-1 pl-2 pr-2">
+                            <p className="w-auto h-auto text-[1vw] text-center">Resistencia lumínica</p>
+                            <p className="w-auto h-auto text-center flex items-center justify-center text-[1vw] p-1 pl-2 pr-2">
                                 {lightResistorRead}
                             </p>
                         </div>
                         <div id="luminosity-resistor-container" className="w-full h-1/2 flex flex-row pl-5 pr-5 items-start justify-between">
-                            <p className="w-auto h-auto text-xl">Hrs luz obtenidas</p>
-                            <p className="w-auto h-auto text-center flex items-center justify-center text-xl  p-1 pl-2 pr-2">
+                            <p className="w-auto h-auto text-[1vw] text-center">Hrs luz obtenidas</p>
+                            <p className="w-auto h-auto text-center flex items-center justify-center text-[1vw] p-1 pl-2 pr-2">
                                 <ObtainLumHrs/>
                             </p>
                         </div> 

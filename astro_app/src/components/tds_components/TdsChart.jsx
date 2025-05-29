@@ -59,37 +59,39 @@ export default function TDSChart() {
 		],
 	};
 
-	const options = {
-		plugins: {
-			title: {
-				display: true,
-				text: "Evolución del TDS",
-			},
-		},
-		scales: {
-			x: {
-				title: {
-					display: false,
-				},
-				type: "linear",
-				position: "bottom",
-				ticks: {
-					display: false,
-				},
-			},
-			y: {
-				title: {
-					display: true,
-					text: "Nivel de TDS",
-				},
-				min: 0,
-				max: 2000, // Rango para el eje Y
-			},
-		},
-	};
+const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        title: {
+        display: true,
+        text: "Evolución del TDS",
+        },
+    },
+    scales: {
+        x: {
+        title: {
+            display: false,
+        },
+        type: "linear",
+        position: "bottom",
+        ticks: {
+            display: false,
+        },
+        },
+        y: {
+        title: {
+            display: true,
+            text: "Nivel de TDS",
+        },
+        min: 0,
+        max: 2000,
+        },
+    },
+};
 
 	return (
-		<div className="w-full h-full bg-theme-white flex justify-center items-center rounded-lg shadow-md">
+		<div className="w-full h-48 bg-theme-white flex justify-center items-center rounded-lg shadow-md">
 			<Line
 				data={chartData}
 				options={options}

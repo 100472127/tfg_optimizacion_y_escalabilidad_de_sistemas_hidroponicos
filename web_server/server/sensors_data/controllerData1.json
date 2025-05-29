@@ -28,5 +28,5 @@
   "LumOptMax": "20000",
   "LumOptHrsMin": "14",
   "LumOptHrsMax": "16",
-  "pumpMode": "1"
+  "manualORauto": "0"
 }

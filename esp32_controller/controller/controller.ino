@@ -23,33 +23,33 @@
 
 
 // PINS
-#define WATERLVLSENSORPIN 18
-#define WATERLVLSENSORMAX 20
-#define WATERLVLSENSORMEZMAX 17
-#define WATERLVLSENSORMEZMIN 16
-#define WATERLVLSENSORRESMAX 24
+#define WATERLVLSENSORPIN 27
+#define WATERLVLSENSORMAX 26
+#define WATERLVLSENSORMEZMAX 25
+#define WATERLVLSENSORMEZMIN 33
+#define WATERLVLSENSORRESMAX 32
 #define PHSENSORPIN 35
 #define WATERQUALITYSENSORPIN 34
-#define BOMBAACIDA 25
-#define BOMBAALCALINA 26
-#define BOMBANUTRIENTES 14
-#define BOMBAMEZCLA 27
-#define BOMBAMEZCLARES 33
-#define BOMBARES 32
-#define HUMIDITYSENSOR 19
+#define BOMBAACIDA 15
+#define BOMBAALCALINA 2
+#define BOMBAMEZCLA 4
+#define BOMBANUTRIENTES 16
+#define BOMBAMEZCLARES 17
+#define BOMBARES 5
+#define HUMIDITYSENSOR 13
 #define DHTTYPE DHT11
-#define SPRAY 23
-#define FAN 4
-#define HEATER 5
-#define RESISTOR A0
-#define LED 13
+#define SPRAY 14
+#define FAN 19
+#define HEATER 18
+#define RESISTOR 36
+#define LED 23
 #define SDA_PIN 21
 #define SCL_PIN 22
 
 // Variable para guardar la IP que se le asignará al microcontrolador al conectarse a la red wifi
 String ip_value;
 
-// URL del servidor principal
+// URL del servidor principal (Raspberry Pi)
 const char* serverUrl = "http://192.168.73.200:3000";
 
 // Creamos un pequeño servidor web local en el puerto 80
@@ -731,8 +731,8 @@ void checkActuatorsIntensity(float temperatureActuatorsOutput)
 // checkTemperatureControl(): funcion de control de la temperatura
 void checkTemperatureControl(float temperatureActuatorsOutput)
 {
-    if (!isnan(dataSensorsInfo[2]) && (getTime() - lastTemperatureCheck) >= 5)
-    { // Control cada 5 segundos
+    if (!isnan(dataSensorsInfo[2]) && (getTime() - lastTemperatureCheck) >= 30)
+    { // Control de la temperatura cada 30 segundos
         checkActuatorsIntensity(temperatureActuatorsOutput);
         lastTemperatureCheck = getTime();
     }
@@ -1224,7 +1224,7 @@ void controlLiquidos()
 
         // BLOQUE 2
         if (dataSensorInfo[9] == 1)
-        { // Si el tanque de residuos esta al maximo desaguar durante 20 segundos
+        { // Si el tanque de residuos esta al maximo desaguar durante 10 segundos
             digitalWrite(BOMBARES, 1);
             statusPumps[5] = 1;
             time = millis();
@@ -1238,7 +1238,7 @@ void controlLiquidos()
 
         // BLOQUE 3
         if (dataSensorsInfo[8] == 1)
-        { // Si el tanque de mezcla esta al maximo desaguar al tanque de residuos y el de mezcla
+        { // Si el tanque de mezcla esta al maximo desaguar del tanque de mezcla al tanque de residuos y vaciar también el tanque de residuos
             digitalWrite(BOMBAMEZCLARES, 1);
             digitalWrite(BOMBARES, 1);
             statusPumps[4] = 1;
@@ -1257,7 +1257,7 @@ void controlLiquidos()
         // BLOQUE 4
         while (optimo == 0)
         {
-            if (dataSensorsInfo[8] == 1)
+            if (dataSensorsInfo[8] == 1) // Si el tanque de mezcla esta al maximo
             {
                 digitalWrite(BOMBAMEZCLARES, 1);
                 digitalWrite(BOMBARES, 1);
@@ -1289,7 +1289,7 @@ void controlLiquidos()
                 statusPumps[1] = 0;
                 statusPumps[3] = 0;
             }
-            else if (dataSensorsInfo[8] == 0)
+            else if (dataSensorsInfo[8] == 0) // Si el tanque de mezcla no esta al maximo
             {
                 readingPHTDS();
                 checkPHTDS();
@@ -1309,7 +1309,7 @@ void controlLiquidos()
                 statusPumps[3] = 0;
             }
         }
-        if (dataSensorsInfo[8] == 1)
+        if (dataSensorsInfo[8] == 1) // Si el tanque de mezcla esta al maximo
         {
             digitalWrite(BOMBAMEZCLARES, 1);
             digitalWrite(BOMBARES, 1);
@@ -1326,14 +1326,14 @@ void controlLiquidos()
             statusPumps[5] = 0;
         }
         // BLOQUE 5
-        if (dataSensorsInfo[10] == 1)
+        if (dataSensorsInfo[10] == 1) // Si el tanque de platanción está al máximo
         {
             digitalWrite(BOMBAMEZCLA, 0);
             statusPumps[2] = 0;
         }
-        else if (dataSensorsInfo[10] == 0)
+        else if (dataSensorsInfo[10] == 0) // Si el tanque de plantación no está al máximo
         {
-            if (dataSensorsInfo[5] == 0)
+            if (dataSensorsInfo[5] == 0) // Si el tanque de platanción no llega al mínimo
             {
                 counterMezcla = getTime();
                 digitalWrite(BOMBAMEZCLA, 1);
@@ -1345,7 +1345,7 @@ void controlLiquidos()
                 digitalWrite(BOMBAMEZCLA, 0);
                 statusPumps[2] = 0;
             }
-            else if (dataSensorsInfo[5] == 1)
+            else if (dataSensorsInfo[5] == 1) // Si el tanque de platanción llega al mínimo
             {
                 if ((getTime() - counterMezcla) >= pumpUseInterval)
                 {
@@ -1369,14 +1369,14 @@ void controlLiquidos()
 //FUNCIONES NUEVAS PARA EL CAMBIO DE ARQUITECTURA
 //-----------------------------------------------
 
-// Función que se ejecuta cada 10 segundos para enviar la información que detectan los sensores al servidor principal
+// Función para enviar la información que detectan los sensores al servidor principal
 void sendData (){
     if (WiFi.status() == WL_CONNECTED) {
-        HTTPClient http; // Crear el objeto HTTP
+        HTTPClient http;
         String fullUrl = String(serverUrl) + "/data/" + String(CONTROLLER_ID);
-        const char* url = fullUrl.c_str();
-        http.begin(url); // Establecer conexión
-        http.addHeader("Content-Type", "application/json"); // Tipo de contenido JSON
+        http.begin(fullUrl);
+        http.addHeader("Content-Type", "application/json");
+
         // Crear el JSON con los datos
         String jsonData = "{";
         jsonData += "\"phRead\":\"" + String(dataSensorsInfo[0]) + "\",";
@@ -1390,58 +1390,67 @@ void sendData (){
         jsonData += "\"waterLvlMinMezRead\":\"" + String(dataSensorsInfo[7]) + "\",";
         jsonData += "\"waterLvlMaxMezRead\":\"" + String(dataSensorsInfo[8]) + "\",";
         jsonData += "\"waterLvlMinResRead\":\"" + String(dataSensorsInfo[9]) + "\",";
+        
         jsonData += "\"statusBombaAcida\":\"" + String(statusPumps[0]) + "\",";
         jsonData += "\"statusBombaAlcalina\":\"" + String(statusPumps[1]) + "\",";
         jsonData += "\"statusBombaMezcla\":\"" + String(statusPumps[2]) + "\",";
         jsonData += "\"statusBombaNutrientes\":\"" + String(statusPumps[3]) + "\",";
         jsonData += "\"statusBombaMezclaRes\":\"" + String(statusPumps[4]) + "\",";
-        jsonData += "\"statusBombaRes\":\"" + String(statusPumps[5]);
-        jsonData += "\"}";
+        jsonData += "\"statusBombaRes\":\"" + String(statusPumps[5]) + "\",";
+
+        jsonData += "\"pHOptMin\":\"" + String(pHOptMin) + "\",";
+        jsonData += "\"pHOptMax\":\"" + String(pHOptMax) + "\",";
+        jsonData += "\"TDSOptMin\":\"" + String(TDSOptMin) + "\",";
+        jsonData += "\"TDSOptMax\":\"" + String(TDSOptMax) + "\",";
+        jsonData += "\"HumOptMin\":\"" + String(HumOptMin) + "\",";
+        jsonData += "\"HumOptMax\":\"" + String(HumOptMax) + "\",";
+        jsonData += "\"TempOptMin\":\"" + String(TempOptMin) + "\",";
+        jsonData += "\"TempOptMax\":\"" + String(TempOptMax) + "\",";
+        jsonData += "\"LumOptMin\":\"" + String(LumOptMin) + "\",";
+        jsonData += "\"LumOptMax\":\"" + String(LumOptMax) + "\",";
+        jsonData += "\"LumOptHrsMin\":\"" + String(LumOptHrsMin) + "\",";
+        jsonData += "\"LumOptHrsMax\":\"" + String(LumOptHrsMax) + "\",";
+        jsonData += "\"pumpMode\":\"" + String(manualORauto) + "\"";
+        jsonData += "}";
     
-        Serial.println(jsonData);
+        int httpResponseCode = http.POST(jsonData);
 
-        int httpResponseCode = http.POST(jsonData); // Enviar la petición POST
-
-        if (httpResponseCode > 0) {
-            Serial.print("Respuesta del servidor: ");
-            Serial.println(http.getString()); // Mostrar la respuesta del servidor
+        if (httpResponseCode == 200) {
+            Serial.println("OK: /data/" + String(CONTROLLER_ID) + " (" + httpResponseCode + ") " + http.getString());
         } else {
-            Serial.print("Error en la petición: sendData");
-            Serial.println(httpResponseCode);
+            Serial.println("ERROR: /data/" + String(CONTROLLER_ID) + " (" + httpResponseCode + ") " + http.getString());
         }
-
-        http.end(); // Finalizar conexión
+        http.end();
     } else {
-        Serial.println("Error: No conectado a WiFi");
+        Serial.println("ERROR: /sendData: No conectado a WiFi");
     }
 }
 
 // Función que se ejecuta en el setup para enviar el ID y la IP asignada al microcontrolador al servidor principal
 void sendIP(){
     if(WiFi.status() == WL_CONNECTED) {
-        HTTPClient http; // Crear el objeto HTTP
+        HTTPClient http;
         String fullUrl = String(serverUrl) + "/ipAssignment";
-        const char* url = fullUrl.c_str();
-        http.begin(url); // Establecer conexión
-        http.addHeader("Content-Type", "application/json"); // Tipo de contenido JSON
+        http.begin(fullUrl);
+        http.addHeader("Content-Type", "application/json");
         ip_value = WiFi.localIP().toString();
+
+        // Crear el JSON con los datos
         String jsonData = "{";
         jsonData += "\"" + String(CONTROLLER_ID) + "\": \"" + String(ip_value) + "\"";
         jsonData += "}";
-        Serial.println(jsonData);
-        int httpResponseCode = http.POST(jsonData); // Enviar la petición POST
 
-        if (httpResponseCode > 0) {
-            Serial.print("Respuesta del servidor: ");
-            Serial.println(http.getString()); // Mostrar la respuesta del servidor
+        int httpResponseCode = http.POST(jsonData);
+
+        if (httpResponseCode == 200) {
+            Serial.println("OK: /ipAssignment (" + httpResponseCode + ") " + http.getString());
         } else {
-            Serial.print("Error en la petición: sendIP");
-            Serial.println(httpResponseCode);
+            Serial.println("ERROR: /ipAssignment (" + httpResponseCode + ") " + http.getString());
         }
 
         http.end(); // Finalizar conexión
     } else {
-        Serial.println("Error: No conectado a WiFi");
+        Serial.println("ERROR: /ipAssignment: No conectado a WiFi");
     }
 }
 
@@ -1467,50 +1476,74 @@ String extractValues() {
 
 // Al recibir la petición cambia el estatus de la bomba acida a 1 o 0
 void handleBombaAcida(){
-    statusPumps[0] = extractValues().toInt();
-    digitalWrite(BOMBAACIDA, statusPumps[0]);
-    Serial.println("Valor de la bomba acida: " + String(statusPumps[0]));
-    server.send(200, "application/json", "{\"mensaje\":\"Status bomba acida actualizada\"}");
+    if (manualORauto == 1) {
+        statusPumps[0] = extractValues().toInt();
+        digitalWrite(BOMBAACIDA, statusPumps[0]);
+        Serial.println("Valor de la bomba acida: " + String(statusPumps[0]));
+        server.send(200, "application/json", "{\"mensaje\":\"Status bomba acida actualizada\"}");
+    } else {
+        server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
+    }
 }
 
 // Al recibir la petición cambia el estatus de la bomba alcalina a 1 o 0
 void handleBombaAlcalina(){
-    statusPumps[1] = extractValues().toInt();
-    digitalWrite(BOMBAACIDA, statusPumps[1]);
-    Serial.println("Valor de la bomba alcalina: " + String(statusPumps[1]));
-    server.send(200, "application/json", "{\"mensaje\":\"Status bomba alcalina actualizada\"}");
+    if (manualORauto == 1){
+        statusPumps[1] = extractValues().toInt();
+        digitalWrite(BOMBAACIDA, statusPumps[1]);
+        Serial.println("Valor de la bomba alcalina: " + String(statusPumps[1]));
+        server.send(200, "application/json", "{\"mensaje\":\"Status bomba alcalina actualizada\"}");
+    } else {
+        server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
+    }
 }
 
 // Al recibir la petición cambia el estatus de la bomba de mezcla a 1 o 0
 void handleBombaMezcla(){
-    statusPumps[2] = extractValues().toInt();
-    digitalWrite(BOMBAACIDA, statusPumps[2]);
-    Serial.println("Valor de la bomba mezcla: " + String(statusPumps[2]));
-    server.send(200, "application/json", "{\"mensaje\":\"Status bomba mezcla actualizada\"}");
+    if (manualORauto == 1){
+        statusPumps[2] = extractValues().toInt();
+        digitalWrite(BOMBAACIDA, statusPumps[2]);
+        Serial.println("Valor de la bomba mezcla: " + String(statusPumps[2]));
+        server.send(200, "application/json", "{\"mensaje\":\"Status bomba mezcla actualizada\"}");
+    } else{
+        server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
+    }
 }
 
 // Al recibir la petición cambia el estatus de la bomba de mezcla a 1 o 0
 void handleBombaNutrientes(){
-    statusPumps[3] = extractValues().toInt();
-    digitalWrite(BOMBANUTRIENTES, statusPumps[3]);
-    Serial.println("Valor de la bomba nutrientes: " + String(statusPumps[3]));
-    server.send(200, "application/json", "{\"mensaje\":\"Status bomba nutrientes actualizada\"}");
+    if (manualORauto == 1){
+        statusPumps[3] = extractValues().toInt();
+        digitalWrite(BOMBANUTRIENTES, statusPumps[3]);
+        Serial.println("Valor de la bomba nutrientes: " + String(statusPumps[3]));
+        server.send(200, "application/json", "{\"mensaje\":\"Status bomba nutrientes actualizada\"}");
+    } else {
+        server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
+    }
 }
 
 // Al recibir la petición cambia el estatus de la bomba de mezcla a 1 o 0
 void handleBombaMezclaResiduos(){
-    statusPumps[4] = extractValues().toInt();
-    digitalWrite(BOMBAACIDA, statusPumps[4]);
-    Serial.println("Valor de la bomba mezclaResiduos: " + String(statusPumps[4]));
-    server.send(200, "application/json", "{\"mensaje\":\"Status bomba mezclaResiduos actualizada\"}");
+    if (manualORauto == 1){
+        statusPumps[4] = extractValues().toInt();
+        digitalWrite(BOMBAACIDA, statusPumps[4]);
+        Serial.println("Valor de la bomba mezclaResiduos: " + String(statusPumps[4]));
+        server.send(200, "application/json", "{\"mensaje\":\"Status bomba mezclaResiduos actualizada\"}");    
+    } else {
+        server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
+    }
 }
 
 // Al recibir la petición cambia el estatus de la bomba de mezcla a 1 o 0
 void handleBombaResiduos(){
-    statusPumps[5] = extractValues().toInt();
-    digitalWrite(BOMBAACIDA, statusPumps[5]);
-    Serial.println("Valor de la bomba residuos: " + String(statusPumps[5]));
-    server.send(200, "application/json", "{\"mensaje\":\"Status bomba residuos actualizada\"}");
+    if (manualORauto == 1){
+        statusPumps[5] = extractValues().toInt();
+        digitalWrite(BOMBAACIDA, statusPumps[5]);
+        Serial.println("Valor de la bomba residuos: " + String(statusPumps[5]));
+        server.send(200, "application/json", "{\"mensaje\":\"Status bomba residuos actualizada\"}");
+    } else {
+        server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
+    }
 }
 
 // Al recibir la petición activa el spray
@@ -1561,7 +1594,7 @@ void handleAjusteSprayUse(){
 void handleAjusteLum(){
     String range = extractValues();
     int separatorIndex = range.indexOf('-');
-    if (separatorIndex != -1){ // Se envía un rango 
+    if (separatorIndex != -1){ 
         LumOptMin = range.substring(0, separatorIndex).toFloat();
         LumOptMax = range.substring(separatorIndex + 1).toFloat();
     } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad

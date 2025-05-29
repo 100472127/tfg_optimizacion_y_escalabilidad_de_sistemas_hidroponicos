@@ -27,7 +27,7 @@ export function getStaticPaths() {
 ---
 
 <Layout title="Cuadro de Control de los Cultivos Hidropónicos">
-    <div id="pageContainer" class="bg-theme-cream rounded-lg w-auto h-auto p-2">
+    <div id="pageContainer" class="bg-theme-cream rounded-lg w-full h-full over p-2">
         <DataUpdater client:only="react" id={id} />
         <Ph client:only="react"/>
         <WaterLvl client:only="react"/>

@@ -60,6 +60,8 @@ export default function PhChart() {
 	};
 
 	const options = {
+        responsive: true,
+        maintainAspectRatio: false,
 		plugins: {
 			title: {
 				display: true,

@@ -4,18 +4,19 @@ import axios from "axios";
 
 
 export default function Timers(){
-    const [pumpMode, setPumpMode] = useState(0);
+    const [manualORauto, setManualORauto] = useState(0); // 0 para automático, 1 para manual
     const [sprayTimer, setSprayTimer] = useState("loading ...");
     const [pumpTimer, setPumpTimer] = useState("loading ...");
 
     useEffect(() => {
+        // Intervalo para obtener el estado de manualORauto cada tres segundos para poder cambiar el timer de la bomba
         const interval = setInterval(() => {
             const currentData = useDataStore.getState().data; 
             if(currentData !== null){
-                setPumpMode(parseFloat(currentData?.pumpMode));
-                clearInterval(interval);
+                setManualORauto(currentData?.manualORauto);
+                console.log("Estado de manualORauto en timers:", currentData?.manualORauto);
             }
-        }, 1000);
+        }, 3000);
 
         const fetchObtainSprayAndPumpTimer = async () => {
             const id = useDataStore.getState().actualController;
@@ -79,16 +80,16 @@ export default function Timers(){
     }, []);
 
     const handleButtonOnOffClick = () => {
-        if(pumpMode === 0? setPumpMode(1) : setPumpMode(0)); // Cambia entre 0 y 1
+        if(manualORauto === 0 ? setManualORauto(1) : setManualORauto(0)); // Cambia entre 0 y 1
         const id = useDataStore.getState().actualController;
         if (id !== null){
             const urlPost = useDataStore.getState().url + `/selectControlMode/${id}`;
-            axios.post(urlPost, { value: pumpMode })
+            axios.post(urlPost, { value: manualORauto })
             .then(response => {
-                console.log(`Modo bomba enviado ${pumpMode}:`);
+                console.log(`Modo bomba enviado ${manualORauto}:`);
             })
             .catch(error => {
-                console.error(`Error al enviar el modo bomba ${pumpMode}:`, error);
+                console.error(`Error al enviar el modo bomba ${manualORauto}:`, error);
             });
         }
     }
@@ -108,7 +109,7 @@ export default function Timers(){
     }
 
     const handleButtonSendPumpTimerClick = () => {
-        if(pumpMode === 0){
+        if(manualORauto === 0){
             alert("El modo bomba está en manual, no se puede cambiar el temporizador de la bomba");
         }
         else{
@@ -157,17 +158,17 @@ export default function Timers(){
     }
 
     const getManualColor = () => {
-        return pumpMode === 0 ? "bg-blue-400" : "bg-gray-700"; // Rojo
+        return manualORauto == 1 ? "bg-blue-400" : "bg-gray-700"; // Rojo
     }
 
     const getAutoColor = () => {
-        return pumpMode === 1 ? "bg-green-400" : "bg-gray-700"; // Azul
+        return manualORauto == 0 ? "bg-green-400" : "bg-gray-700"; // Azul
     }  
 
     return (
         <section className="timers-container w-full h-full flex flex-col justify-center items-center bg-theme-green rounded-lg shadow-sm shadow-gray-800">
             <div id="pump-timer" className="h-1/2 w-full">
-                <h1 className="w-full h-auto flex justify-center text-4xl pr-2 pl-2 bg-theme-dark-green rounded-lg">Temporizador Bomba</h1>
+                <h1 className="w-full h-auto flex justify-center text-[1.6vw] pr-2 pl-2 bg-theme-dark-green rounded-lg">Temporizador Bomba</h1>
                 <div className="w-full h-25 flex flex-row justify-center gap-10 items-center">
                     <div className="on-off-container">
                         <div className="flex flex-col justify-center items-center gap-2">
@@ -192,7 +193,7 @@ export default function Timers(){
                 </div>
             </div>
             <div id="spray-timer" className="h-1/2 w-full">
-                <h1 className="w-full h-auto flex justify-center text-4xl pr-2 pl-2 bg-theme-dark-green rounded-lg">Temporizador Spray</h1>
+                <h1 className="w-full h-auto flex justify-center text-[1.6vw] pr-2 pl-2 bg-theme-dark-green rounded-lg">Temporizador Spray</h1>
                 <div className="flex flex-row w-full h-3/5 justify-center items-center gap-10">
                     <button
                         onClick={() => handleButtonActivarSprayClick()}
@@ -210,5 +211,4 @@ export default function Timers(){
             </div>
         </section>
     );
-
 }

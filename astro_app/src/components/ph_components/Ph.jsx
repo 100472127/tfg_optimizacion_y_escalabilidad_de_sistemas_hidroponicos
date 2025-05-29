@@ -95,7 +95,7 @@ export default function Ph() {
                     </div>
                 </div>
             </div>
-            <div className="ph-graph-container h-60 w-2/3 flex justify-center items-center">
+            <div className="ph-graph-container h-60 w-2/3 flex justify-center items-center p-2">
                 <PhChart phValue={phRead}/>
             </div>
         </section>
