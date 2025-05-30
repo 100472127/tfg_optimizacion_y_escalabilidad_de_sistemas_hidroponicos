@@ -91,6 +91,7 @@ unsigned long lightHours = 0;
 unsigned long startLight = 0;
 float startDay = 0;
 unsigned long counterMezcla = 0;
+int dif = 0;
 unsigned long lastSpray = 0;
 unsigned long sprayUseInterval = 60;
 unsigned long pumpUseInterval = 3600;
@@ -195,54 +196,55 @@ void setFuzzyPHTDS()
 
     // Definir el conjunto difuso para pH
     FuzzyInput *inputPH = new FuzzyInput(1);
-    FuzzySet *veryLowPH = new FuzzySet(0, 0, 3, 4, "MuyBajo");
+    FuzzySet *veryLowPH = new FuzzySet(0, 0, 3, 4);          // Muy baja
     inputPH->addFuzzySet(veryLowPH);
-    FuzzySet *lowPH = new FuzzySet(3, 3.5, 5, 5.5, "Bajo");
+    FuzzySet *lowPH = new FuzzySet(3, 3.5, 5, 5.5);             // Baja
     inputPH->addFuzzySet(lowPH);
-    FuzzySet *optimalPH = new FuzzySet(5, 5.5, 6.5, 7, "Optimo");
+    FuzzySet *optimalPH = new FuzzySet(5, 5.5, 6.5, 7);       // Optimo
     inputPH->addFuzzySet(optimalPH);
-    FuzzySet *highPH = new FuzzySet(6.5, 7, 8, 10, "Alto");
+    FuzzySet *highPH = new FuzzySet(6.5, 7, 8, 10);             // Alta
     inputPH->addFuzzySet(highPH);
-    FuzzySet *veryHighPH = new FuzzySet(8, 8.5, 14, 14, "MuyAlto");
+    FuzzySet *veryHighPH = new FuzzySet(8, 8.5, 14, 14);     // Muy alta
     inputPH->addFuzzySet(veryHighPH);
     fuzzyPHTDS->addFuzzyInput(inputPH);
 
     // Definir el conjunto difuso para TDS
     FuzzyInput *inputTDS = new FuzzyInput(2);
-    FuzzySet *veryLowTDS = new FuzzySet(0, 0, 400, 500, "Muy Baja");
+    FuzzySet *veryLowTDS = new FuzzySet(0, 0, 400, 500);                // Muy baja
     inputTDS->addFuzzySet(veryLowTDS);
-    FuzzySet *lowTDS = new FuzzySet(300, 500, 750, 800, "Baja");
+    FuzzySet *lowTDS = new FuzzySet(300, 500, 750, 800);                    //Baja
     inputTDS->addFuzzySet(lowTDS);
-    FuzzySet *optimalTDS = new FuzzySet(750, 800, 1200, 1250, "Optima");
+    FuzzySet *optimalTDS = new FuzzySet(750, 800, 1200, 1250);            //Optima
     inputTDS->addFuzzySet(optimalTDS);
-    FuzzySet *highTDS = new FuzzySet(1200, 1250, 1400, 1450, "Alta");
+    FuzzySet *highTDS = new FuzzySet(1200, 1250, 1400, 1450);               //Alta
     inputTDS->addFuzzySet(highTDS);
-    FuzzySet *veryHighTDS = new FuzzySet(1300, 1450, 1500, 1500, "Muy Alta");
+    FuzzySet *veryHighTDS = new FuzzySet(1300, 1450, 1500, 1500);       //Muy alta
     inputTDS->addFuzzySet(veryHighTDS);
     fuzzyPHTDS->addFuzzyInput(inputTDS);
 
     // Definir el conjunto difuso para bombas
     FuzzyOutput *outputBombaAlcalina = new FuzzyOutput(1);
-    FuzzySet *activateAlkaline = new FuzzySet(0.5, 1, 1.5, "Activar");
+    FuzzySet *activateAlkaline = new FuzzySet(0.5, 1, 1, 1.5);             // Activar
     outputBombaAlcalina->addFuzzySet(activateAlkaline);
-    FuzzySet *noActivateAlkaline = new FuzzySet(-0.5, 0, 0.5, "No Activar");
+    FuzzySet *noActivateAlkaline = new FuzzySet(-0.5, 0, 0, 0.5);          // No activar
     outputBombaAlcalina->addFuzzySet(noActivateAlkaline);
     fuzzyPHTDS->addFuzzyOutput(outputBombaAlcalina);
 
     FuzzyOutput *outputBombaAcida = new FuzzyOutput(2);
-    FuzzySet *activateAcidic = new FuzzySet(0.5, 1, 1.5, "Activar");
+    FuzzySet *activateAcidic = new FuzzySet(0.5, 1, 1, 1.5);               // Activar
     outputBombaAcida->addFuzzySet(activateAcidic);
-    FuzzySet *noActivateAcidic = new FuzzySet(-0.5, 0, 0.5, "No Activar");
+    FuzzySet *noActivateAcidic = new FuzzySet(-0.5, 0, 0, 0.5);            // No activar
     outputBombaAcida->addFuzzySet(noActivateAcidic);
     fuzzyPHTDS->addFuzzyOutput(outputBombaAcida);
 
     FuzzyOutput *outputBombaNutrientes = new FuzzyOutput(3);
-    FuzzySet *activateNutrients = new FuzzySet(0.5, 1, 1.5, "Activar");
+    FuzzySet *activateNutrients = new FuzzySet(0.5, 1, 1, 1.5);            // Activar
     outputBombaNutrientes->addFuzzySet(activateNutrients);
-    FuzzySet *noActivateNutrients = new FuzzySet(-0.5, 0, 0.5, "No Activar");
+    FuzzySet *noActivateNutrients = new FuzzySet(-0.5, 0, 0, 0.5);         // No activar
     outputBombaNutrientes->addFuzzySet(noActivateNutrients);
     fuzzyPHTDS->addFuzzyOutput(outputBombaNutrientes);
 
+    // Definir los antecedentes de las reglas difusas
     FuzzyRuleAntecedent *antecedentPHMuyBajoTDSMuyBajo = new FuzzyRuleAntecedent();
     antecedentPHMuyBajoTDSMuyBajo->joinWithAND(veryLowPH, veryLowTDS);
     FuzzyRuleAntecedent *antecedentPHMuyBajoTDSBajo = new FuzzyRuleAntecedent();
@@ -293,6 +295,8 @@ void setFuzzyPHTDS()
     antecedentPHMuyAltoTDSAlta->joinWithAND(veryHighPH, highTDS);
     FuzzyRuleAntecedent *antecedentPHMuyAltoTDSMuyAlta = new FuzzyRuleAntecedent();
     antecedentPHMuyAltoTDSMuyAlta->joinWithAND(veryHighPH, veryHighTDS);
+
+    // Definir los consecuentes de las reglas difusas
     FuzzyRuleConsequent *thenActivarBombaAlcalina = new FuzzyRuleConsequent();
     thenActivarBombaAlcalina->addOutput(activateAlkaline);
     FuzzyRuleConsequent *thenActivarBombaAcida = new FuzzyRuleConsequent();
@@ -306,6 +310,7 @@ void setFuzzyPHTDS()
     FuzzyRuleConsequent *thenNoActivarBombaNutrientes = new FuzzyRuleConsequent();
     thenNoActivarBombaNutrientes->addOutput(noActivateNutrients);
 
+    // Definir las reglas difusas
     FuzzyRule *fuzzyRule1 = new FuzzyRule(1, antecedentPHMuyBajoTDSMuyBajo, thenActivarBombaAlcalina);
     fuzzyPHTDS->addFuzzyRule(fuzzyRule1);
     FuzzyRule *fuzzyRule2 = new FuzzyRule(2, antecedentPHMuyBajoTDSMuyBajo, thenNoActivarBombaAcida);
@@ -456,10 +461,6 @@ void setFuzzyPHTDS()
     fuzzyPHTDS->addFuzzyRule(fuzzyRule74);
     FuzzyRule *fuzzyRule75 = new FuzzyRule(75, antecedentPHMuyAltoTDSMuyAlta, thenNoActivarBombaNutrientes);
     fuzzyPHTDS->addFuzzyRule(fuzzyRule75);
-
-    fuzzyPHTDS->setMethodOfInference(Fuzzy ::min);
-    fuzzyPHTDS->setMethodOfAggregation(Fuzzy ::max);
-    fuzzyPHTDS->setMethodOfDefuzzification(Fuzzy ::centroid);
 }
 
 void readingPHTDS()
@@ -588,11 +589,11 @@ void setFuzzyHUM()
 
     // Definicion de las salidas para controlar el spray
     FuzzyOutput *accionSpray = new FuzzyOutput(1);
-    FuzzySet *noActivar = new FuzzySet(-0.5, 0, 0.5);
+    FuzzySet *noActivar = new FuzzySet(-0.5, 0, 0, 0.5);
     accionSpray->addFuzzySet(noActivar);
-    FuzzySet *activar1 = new FuzzySet(0.5, 1, 1.5);
+    FuzzySet *activar1 = new FuzzySet(0.5, 1, 1, 1.5);
     accionSpray->addFuzzySet(activar1);
-    FuzzySet *activar2 = new FuzzySet(1.5, 2, 2.5);
+    FuzzySet *activar2 = new FuzzySet(1.5, 2, 2, 2.5);
     accionSpray->addFuzzySet(activar2);
     fuzzyHUMIDITY->addFuzzyOutput(accionSpray);
 
@@ -621,9 +622,6 @@ void setFuzzyHUM()
     thenNoActivarHigh->addOutput(noActivar);
     FuzzyRule *fuzzyRuleHUMIDITY04 = new FuzzyRule(4, ifAlta, thenNoActivarHigh);
     fuzzyHUMIDITY->addFuzzyRule(fuzzyRuleHUMIDITY04);
-    fuzzyHUMIDITY->setMethodOfInference(Fuzzy ::min);
-    fuzzyHUMIDITY->setMethodOfAggregation(Fuzzy ::max);
-    fuzzyHUMIDITY->setMethodOfDefuzzification(Fuzzy ::centroid);
 }
 
 // humidityReading(): lectura de la humedad ambiente del sistema
@@ -646,7 +644,7 @@ void checkActuatorsIntensity(float temperatureActuatorsOutput)
         }
         else if (heaterIntensity == 0 && fanIntensity >= 40)
         {
-            fanIntensity -= 40
+            fanIntensity -= 40;
         }
         else if (heaterIntensity == 0 && fanIntensity < 40)
         {
@@ -667,7 +665,7 @@ void checkActuatorsIntensity(float temperatureActuatorsOutput)
         }
         else if (heaterIntensity == 0 && fanIntensity >= 20)
         {
-            fanIntensity -= 20
+            fanIntensity -= 20;
         }
         else if (heaterIntensity == 0 && fanIntensity < 20)
         {
@@ -688,7 +686,7 @@ void checkActuatorsIntensity(float temperatureActuatorsOutput)
         }
         else if (fanIntensity == 0 && heaterIntensity >= 40)
         {
-            heaterIntensity -= 40
+            heaterIntensity -= 40;
         }
         else if (fanIntensity == 0 && heaterIntensity < 40)
         {
@@ -709,7 +707,7 @@ void checkActuatorsIntensity(float temperatureActuatorsOutput)
         }
         else if (fanIntensity == 0 && heaterIntensity >= 20)
         {
-            heaterIntensity -= 20
+            heaterIntensity -= 20;
         }
         else if (fanIntensity == 0 && heaterIntensity < 20)
         {
@@ -768,7 +766,7 @@ void setFuzzyTEMP()
     // Definir el valor de entrada (lectura de temperatura)
     FuzzyInput *temperatureReadedValue = new FuzzyInput(1);
 
-    // Funciones de membresia para la temperatura
+    // Definición de los conjuntos difusos para la temperatura
     FuzzySet *veryLowTEMP = new FuzzySet(0, 0, 6, 8);
     temperatureReadedValue->addFuzzySet(veryLowTEMP);
     FuzzySet *lowTEMP = new FuzzySet(7, 9, 10, 14);
@@ -784,16 +782,16 @@ void setFuzzyTEMP()
     // Definir la salida (control de temperatura)
     FuzzyOutput *temperatureControl = new FuzzyOutput(1);
 
-    // Funciones de membresia para el control de temperatura
-    FuzzySet *increaseMuch = new FuzzySet(1.5, 2, 2.5);
+    // Funciones de los conjuntos difusos para el control de temperatura
+    FuzzySet *increaseMuch = new FuzzySet(1.5, 2, 2, 2.5);
     temperatureControl->addFuzzySet(increaseMuch);
-    FuzzySet *increase = new FuzzySet(0.5, 1, 1.5);
+    FuzzySet *increase = new FuzzySet(0.5, 1, 1, 1.5);
     temperatureControl->addFuzzySet(increase);
-    FuzzySet *maintain = new FuzzySet(-0.5, 0, 0.5);
+    FuzzySet *maintain = new FuzzySet(-0.5, 0, 0, 0.5);
     temperatureControl->addFuzzySet(maintain);
-    FuzzySet *decrease = new FuzzySet(-1.5, -1, -0.5);
+    FuzzySet *decrease = new FuzzySet(-1.5, -1, -1, -0.5);
     temperatureControl->addFuzzySet(decrease);
-    FuzzySet *decreaseMuch = new FuzzySet(-2.5, -2, -1.5);
+    FuzzySet *decreaseMuch = new FuzzySet(-2.5, -2, -2, -1.5);
     temperatureControl->addFuzzySet(decreaseMuch);
     fuzzyTEMPERATURE->addFuzzyOutput(temperatureControl);
 
@@ -827,11 +825,7 @@ void setFuzzyTEMP()
     FuzzyRuleConsequent *thenDecreaseMuch = new FuzzyRuleConsequent();
     thenDecreaseMuch->addOutput(decreaseMuch);
     FuzzyRule *fuzzyRuleTEMP05 = new FuzzyRule(5, ifVeryHighTemperature, thenDecreaseMuch);
-
     fuzzyTEMPERATURE->addFuzzyRule(fuzzyRuleTEMP05);
-    fuzzyTEMPERATURE->setMethodOfInference(Fuzzy ::min);
-    fuzzyTEMPERATURE->setMethodOfAggregation(Fuzzy ::max);
-    fuzzyTEMPERATURE->setMethodOfDefuzzification(Fuzzy ::centroid);
 }
 
 // tempReading(): lectura de la temperatura relativa del sistema
@@ -956,12 +950,12 @@ void setFuzzyLUM()
 
     // Definicion del output ’LuminosidadLED’
     FuzzyOutput *luminosidadLED = new FuzzyOutput(1);
-    FuzzySet *eliminarLum = new FuzzySet(-0.5, 0, 0.5);      // MF1 - Eliminar Luminosidad
-    FuzzySet *disminuirMuchoLum = new FuzzySet(0.5, 1, 1.5); // MF2 - Disminuir Mucho Luminosidad
-    FuzzySet *disminuirLum = new FuzzySet(1.5, 2, 2.5);      // MF3 - Disminuir Luminosidad
-    FuzzySet *mantenerLum = new FuzzySet(2.5, 3, 3.5);       // MF4 - Mantener Luminosidad
-    FuzzySet *aumentarLum = new FuzzySet(3.5, 4, 4.5);       // MF5 - Aumentar Luminosidad
-    FuzzySet *aumentarMuchoLum = new FuzzySet(4.5, 5, 5.5);  // MF6 - Aumentar Mucho Luminosidad
+    FuzzySet *eliminarLum = new FuzzySet(-0.5, 0, 0, 0.5);      // MF1 - Eliminar Luminosidad
+    FuzzySet *disminuirMuchoLum = new FuzzySet(0.5, 1, 1, 1.5); // MF2 - Disminuir Mucho Luminosidad
+    FuzzySet *disminuirLum = new FuzzySet(1.5, 2, 2, 2.5);      // MF3 - Disminuir Luminosidad
+    FuzzySet *mantenerLum = new FuzzySet(2.5, 3, 3, 3.5);       // MF4 - Mantener Luminosidad
+    FuzzySet *aumentarLum = new FuzzySet(3.5, 4, 4, 4.5);       // MF5 - Aumentar Luminosidad
+    FuzzySet *aumentarMuchoLum = new FuzzySet(4.5, 5, 5, 5.5);  // MF6 - Aumentar Mucho Luminosidad
     luminosidadLED->addFuzzySet(eliminarLum);
     luminosidadLED->addFuzzySet(disminuirMuchoLum);
     luminosidadLED->addFuzzySet(disminuirLum);
@@ -1129,10 +1123,6 @@ void setFuzzyLUM()
     thenEliminarLum5->addOutput(eliminarLum);
     FuzzyRule *rule20 = new FuzzyRule(20, ifLumMuyAltaHorasAltas, thenEliminarLum5);
     fuzzyLIGHT->addFuzzyRule(rule20);
-
-    fuzzyLIGHT->setMethodOfInference(Fuzzy ::min);
-    fuzzyLIGHT->setMethodOfAggregation(Fuzzy ::max);
-    fuzzyLIGHT->setMethodOfDefuzzification(Fuzzy ::centroid);
 }
 
 void lightResistorReading()
@@ -1241,12 +1231,12 @@ void controlLiquidos()
         }
 
         // BLOQUE 2
-        if (dataSensorInfo[9] == 1)
+        if (dataSensorsInfo[9] == 1)
         { // Si el tanque de residuos esta al maximo desaguar durante 10 segundos
             digitalWrite(BOMBARES, 1);
             statusPumps[5] = 1;
             time = millis();
-            while (millis() - time < 10000 || dataSensorInfo[9] == 1)
+            while (millis() - time < 10000 || dataSensorsInfo[9] == 1)
             {
                 leerSensorRes();
             }
@@ -1262,7 +1252,7 @@ void controlLiquidos()
             statusPumps[4] = 1;
             statusPumps[5] = 1;
             time = millis();
-            while ((millis() - time) < 10000 || dataSensorInfo[8] == 1)
+            while ((millis() - time) < 10000 || dataSensorsInfo[8] == 1)
             {
                 leerSensorMaxMez();
             }
@@ -1296,7 +1286,7 @@ void controlLiquidos()
                 while ((millis() - time < 10000) && (dataSensorsInfo[8] == 0))
                 {
                 }
-                if (statusPumps[0] = 0 && statusPumps[1] = 0 && statusPumps[3] = 0)
+                if (statusPumps[0] == 0 && statusPumps[1] == 0 && statusPumps[3] == 0)
                 {
                     optimo = 1;
                 }
@@ -1315,7 +1305,7 @@ void controlLiquidos()
                 while ((millis() - time < 10000) && (dataSensorsInfo[8] == 0))
                 {
                 }
-                if (statusPumps[0] = 0 && statusPumps[1] = 0 && statusPumps[3] = 0)
+                if (statusPumps[0] == 0 && statusPumps[1] == 0 && statusPumps[3] == 0)
                 {
                     optimo = 1;
                 }
@@ -1469,9 +1459,9 @@ void sendIP(){
         int httpResponseCode = http.POST(jsonData);
 
         if (httpResponseCode == 200) {
-            Serial.println("OK: /ipAssignment (" + httpResponseCode + ") " + http.getString());
+            Serial.println("OK: /ipAssignment (" + String(httpResponseCode) + ") " + http.getString());
         } else {
-            Serial.println("ERROR: /ipAssignment (" + httpResponseCode + ") " + http.getString());
+            Serial.println("ERROR: /ipAssignment (" + String(httpResponseCode) + ") " + http.getString());
         }
 
         http.end(); // Finalizar conexión
@@ -1620,12 +1610,19 @@ void handleAjusteLum(){
     String range = extractValues();
     int separatorIndex = range.indexOf('-');
     if (separatorIndex != -1){ 
-        LumOptMin = range.substring(0, separatorIndex).toFloat();
-        LumOptMax = range.substring(separatorIndex + 1).toFloat();
-    } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
-        LumOptMin = 10000.0;
-        LumOptMax = 20000.0;
-    }
+        String LumOptMinReceived = range.substring(0, separatorIndex);
+        if (LumOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+            LumOptMin = LumOptMinReceived.toFloat();
+        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+            LumOptMin = 10000.0;
+        }
+        String LumOptMaxReceived = range.substring(separatorIndex + 1);
+        if (LumOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+            LumOptMax = LumOptMaxReceived.toFloat();
+        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+            LumOptMax = 20000.0;
+        }
+    } 
     preferences.begin("LUMMin", false);
     preferences.putFloat("lumMinData", LumOptMin);
     preferences.end();
@@ -1641,14 +1638,20 @@ void handleAjusteLum(){
 void handleAjusteLumHours(){
     String range = extractValues();
     int separatorIndex = range.indexOf('-');
-
     if (separatorIndex != -1){ // Se envía un rango 
-        LumOptHrsMin = range.substring(0, separatorIndex).toFloat();
-        LumOptHrsMax = range.substring(separatorIndex + 1).toFloat();
-    } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
-        LumOptHrsMin = 14.0;
-        LumOptHrsMax = 16.0;
-    }
+        String LumOptHrsMinReceived = range.substring(0, separatorIndex);
+        if (LumOptHrsMinReceived != "auto"){
+            LumOptHrsMin = LumOptHrsMinReceived.toFloat();
+        } else {     // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+            LumOptHrsMin = 14.0;
+        }
+        String LumOptHrsMaxReceived = range.substring(separatorIndex + 1);
+        if (LumOptHrsMaxReceived != "auto"){
+            LumOptHrsMax = LumOptHrsMaxReceived.toFloat();
+        } else {
+            LumOptHrsMax = 16.0;
+        }
+    } 
     preferences.begin("LUMHRSMin", false);
     preferences.putFloat("lumHrsMinData", LumOptHrsMin);
     preferences.end();
@@ -1663,20 +1666,20 @@ void handleAjustePh(){
     String ranges = extractValues();
     int rangesSeparatorIndex = ranges.indexOf(';');
     String rangesPh = ranges.substring(0, rangesSeparatorIndex);
-    String rangesTDS = ranges.substring(separatorIndex + 1);
+    String rangesTDS = ranges.substring(rangesSeparatorIndex + 1);
     int phSeparatorIndex = rangesPh.indexOf('-');
     int tdsSeparatorIndex = rangesTDS.indexOf('-');
 
     if (phSeparatorIndex != -1){
-        pHOptMin = rangesPh.substring(0, phSeparatorIndex)
-        if(pHOptMin != "auto"){ // Si no es "auto" es un número float 
-            pHOptMin = pHOptMin.toFloat();
+        String pHOptMinReceived = rangesPh.substring(0, phSeparatorIndex);
+        if(pHOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+            pHOptMin = pHOptMinReceived.toFloat();
         } else{
-            pHOptMin = 5.5;
+            pHOptMin = 5.5;     // Si es auto se establece un número por defecto
         }
-        pHOptMax = rangesPh.substring(phSeparatorIndex + 1);
-        if(pHOptMax != "auto"){ // Si no es "auto" es un número float 
-            pHOptMax = pHOptMax.toFloat();
+        String pHOptMaxReceived = rangesPh.substring(phSeparatorIndex + 1);
+        if(pHOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+            pHOptMax = pHOptMaxReceived.toFloat();
         } else{
             pHOptMax = 6.5;
         }
@@ -1689,15 +1692,15 @@ void handleAjustePh(){
     preferences.end();
 
     if (tdsSeparatorIndex != -1){
-        TDSOptMin = rangesTDS.substring(0, tdsSeparatorIndex)
-        if(TDSOptMin != "auto"){ // Si no es "auto" es un número float 
-            TDSOptMin = TDSOptMin.toFloat();
+        String TDSOptMinReceived = rangesTDS.substring(0, tdsSeparatorIndex);
+        if(TDSOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+            TDSOptMin = TDSOptMinReceived.toFloat();
         } else{
             TDSOptMin = 800.0;
         }
-        TDSOptMax = rangesTDS.substring(tdsSeparatorIndex + 1);
-        if(TDSOptMax != "auto"){ // Si no es "auto" es un número float 
-            TDSOptMax = TDSOptMax.toFloat();
+        String TDSOptMaxReceived = rangesTDS.substring(tdsSeparatorIndex + 1);
+        if(TDSOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+            TDSOptMax = TDSOptMaxReceived.toFloat();
         } else{
             TDSOptMax = 1200.0;
         }
@@ -1720,12 +1723,19 @@ void handleAjusteTemp(){
     int separatorIndex = range.indexOf('-');
 
     if(separatorIndex != -1){
-        TempOptMin = range.substring(0, separatorIndex).toFloat();
-        TempOptMax = range.substring(separatorIndex + 1).toFloat();
-    } else {
-        TempOptMin = 60.0;
-        TempOptMax = 75.0;
-    }
+        String TempOptMinReceived = range.substring(0, separatorIndex);
+        if(TempOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+            TempOptMin = TempOptMinReceived.toFloat();
+        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+            TempOptMin = 60.0;
+        }
+        String TempOptMaxReceived = range.substring(separatorIndex + 1);
+        if(TempOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+            TempOptMax = TempOptMaxReceived.toFloat();
+        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+            TempOptMax = 75.0;
+        }
+    } 
     preferences.begin("TEMPMin", false);
     preferences.putFloat("tempMinData", TempOptMin);
     preferences.end();
@@ -1741,12 +1751,19 @@ void handleAjusteHum(){
     int separatorIndex = range.indexOf('-');
     
     if(separatorIndex != -1){
-        HumOptMin = range.substring(0, separatorIndex).toFloat();
-        HumOptMax = range.substring(separatorIndex + 1).toFloat();
-    } else {
-        HumOptMin = 14.0;
-        HumOptMax = 18.0;
-    }
+        String HumOptMinReceived = range.substring(0, separatorIndex);
+        if(HumOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+            HumOptMin = HumOptMinReceived.toFloat();
+        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+            HumOptMin = 14.0;
+        }
+        String HumOptMaxReceived = range.substring(separatorIndex + 1);
+        if(HumOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+            HumOptMax = HumOptMaxReceived.toFloat();
+        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+            HumOptMax = 18.0;
+        }
+    } 
     preferences.begin("HUMMin", false);
     preferences.putFloat("humMinData", HumOptMin);
     preferences.end();
@@ -1795,7 +1812,7 @@ void handlePowerFan(){
         if (power != ""){
             powerFan = power.toInt();
             int powerPWD = map(powerFan, 0, 10, 0, 255);
-            lecWrite(FAN_CHANNEL, powerPWD);
+            ledcWrite(FAN_CHANNEL, powerPWD);
             Serial.println("Potencia del ventilador: " + String(power) + " \tPotencia PWM: " + String(powerPWD));
             server.send(200, "application/json", "{\"powerFan\":\"" + String(power) + "\"}");
         }
@@ -1808,7 +1825,7 @@ void handlePowerHeater(){
         if (power != ""){
             powerHeater = power.toInt();
             int powerPWD = map(powerHeater, 0, 10, 0, 255);
-            lecWrite(HEATER_CHANNEL, powerPWD);
+            ledcWrite(HEATER_CHANNEL, powerPWD);
             Serial.println("Potencia del calentador: " + String(power) + " \tPotencia PWM: " + String(powerPWD));
             server.send(200, "application/json", "{\"powerHeater\":\"" + String(power) + "\"}");
         }
@@ -1876,14 +1893,14 @@ void setup()
 
     // Conectamos el calentador y el ventilador a sus PINES correspondientes y los apagamos
     pinMode(FAN, OUTPUT);
-    lecSetup(FAN_CHANNEL, 1000, 8);
-    lecAttachPin(FAN, FAN_CHANNEL);
-    lecWrite(FAN_CHANNEL, 0); // OFF
+    ledcSetup(FAN_CHANNEL, 1000, 8);
+    ledcAttachPin(FAN, FAN_CHANNEL);
+    ledcWrite(FAN_CHANNEL, 0); // OFF
 
     pinMode(HEATER, OUTPUT);
-    lecSetup(HEATER_CHANNEL, 500, 8);
-    lecAttachPin(HEATER, HEATER_CHANNEL);
-    lecWrite(HEATER_CHANNEL, 0); // OFF
+    ledcSetup(HEATER_CHANNEL, 500, 8);
+    ledcAttachPin(HEATER, HEATER_CHANNEL);
+    ledcWrite(HEATER_CHANNEL, 0); // OFF
 
     // Conectamos el LED a su PIN y lo apagamos
     pinMode(LED, OUTPUT);
@@ -1955,7 +1972,7 @@ void setup()
     dht.begin();
     tsl.begin();
     tsl.enableAutoRange(true);                             // Habilita el rango automatico
-    tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_100MS); // Configura el tiempo de integracion
+    tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS); // Configura el tiempo de integracion
 
     // Obtenemos el tiempo actual
     startLight = getTime();
