@@ -310,6 +310,50 @@ app.post('/ajusteHum/:id', async (req, res) => {
 });
 
 
+// Controles manuales de los actuadores (ventilador, calefactor, LED)
+app.post('/modeLed/:id', async (req, res) => {
+    const controllerID = req.params.id;  // Obtener el ID del controlador desde la URL
+    const dataToSend = req.body;         // Obtener los datos del cuerpo de la petición
+    const result = await sendPetition("POST", controllerID, dataToSend, "/modeLed");  // Esperar el resultado de sendPost
+    res.status(result === "ERROR" ? 500 : 200).send(result);
+});
+
+app.post('/modeFan/:id', async (req, res) => {
+    const controllerID = req.params.id;  // Obtener el ID del controlador desde la URL
+    const dataToSend = req.body;         // Obtener los datos del cuerpo de la petición
+    const result = await sendPetition("POST", controllerID, dataToSend, "/modeFan");  // Esperar el resultado de sendPost
+    res.status(result === "ERROR" ? 500 : 200).send(result);
+});
+
+app.post('/modeHeater/:id', async (req, res) => {
+    const controllerID = req.params.id;  // Obtener el ID del controlador desde la URL
+    const dataToSend = req.body;         // Obtener los datos del cuerpo de la petición
+    const result = await sendPetition("POST", controllerID, dataToSend, "/modeHeater");  // Esperar el resultado de sendPost
+    res.status(result === "ERROR" ? 500 : 200).send(result);
+});
+
+// Potencia de los actuadores en el modo manual
+app.post('/powerLed/:id', async (req, res) => {
+    const controllerID = req.params.id;  // Obtener el ID del controlador desde la URL
+    const dataToSend = req.body;         // Obtener los datos del cuerpo de la petición
+    const result = await sendPetition("POST", controllerID, dataToSend, "/powerLed");  // Esperar el resultado de sendPost
+    res.status(result === "ERROR" ? 500 : 200).send(result);
+});
+
+app.post('/powerFan/:id', async (req, res) => {
+    const controllerID = req.params.id;  // Obtener el ID del controlador desde la URL
+    const dataToSend = req.body;         // Obtener los datos del cuerpo de la petición
+    const result = await sendPetition("POST", controllerID, dataToSend, "/powerFan");  // Esperar el resultado de sendPost
+    res.status(result === "ERROR" ? 500 : 200).send(result);
+});
+
+app.post('/powerHeater/:id', async (req, res) => {
+    const controllerID = req.params.id;  // Obtener el ID del controlador desde la URL
+    const dataToSend = req.body;         // Obtener los datos del cuerpo de la petición
+    const result = await sendPetition("POST", controllerID, dataToSend, "/powerHeater");  // Esperar el resultado de sendPost
+    res.status(result === "ERROR" ? 500 : 200).send(result);
+});
+
 // ----------------------------------------------------------------------------------------------------
 // | PETICIONES ESPECÍFICAS DEL SERVIDOR GENERAL AL MICROCONTROLADOR PARA ACTUALIZACIÓN EN TIEMPO REAL|
 // ----------------------------------------------------------------------------------------------------

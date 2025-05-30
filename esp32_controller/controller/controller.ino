@@ -46,6 +46,11 @@
 #define SDA_PIN 21
 #define SCL_PIN 22
 
+// Canales para la configuración del PWM de los actuadores
+#define LED_CHANNEL 0
+#define FAN_CHANNEL 1
+#define HEATER_CHANNEL 2 
+
 // Variable para guardar la IP que se le asignará al microcontrolador al conectarse a la red wifi
 String ip_value;
 
@@ -89,7 +94,13 @@ unsigned long counterMezcla = 0;
 unsigned long lastSpray = 0;
 unsigned long sprayUseInterval = 60;
 unsigned long pumpUseInterval = 3600;
-int manualORauto = 0;
+int manualORauto = 0;       // (bombas) 0 = automatico, 1 = manual
+int manualORautoLed = 0;    // (led) 0 = automatico, 1 = manual
+int manualORautoFan = 0;    // (ventilador) 0 = automatico, 1 = manual
+int manualORautoHeater = 0; // (calefactor) 0 = automatico, 1 = manual
+int powerLed = 0;
+int powerFan = 0;
+int powerHeater = 0;
 unsigned long lastChronoOn = 0;
 
 
@@ -145,14 +156,14 @@ void checkPHTDS()
     // Establecer entradas para el sistema difuso
     if (manualORauto == 0)
     {
-        fuzzySystem->setInput(1, dataSensorsInfo[0]); // pH
-        fuzzySystem->setInput(2, dataSensorsInfo[1]); // TDS
+        fuzzyPHTDS->setInput(1, dataSensorsInfo[0]); // pH
+        fuzzyPHTDS->setInput(2, dataSensorsInfo[1]); // TDS
         // Fuzzificar las entradas
-        fuzzySystem->fuzzify();
+        fuzzyPHTDS->fuzzify();
         // Defuzzificar las salidas
-        float outputAlcalina = fuzzySystem->defuzzify(1);
-        float outputAcida = fuzzySystem->defuzzify(2);
-        float outputNutrientes = fuzzySystem->defuzzify(3);
+        float outputAlcalina = fuzzyPHTDS->defuzzify(1);
+        float outputAcida = fuzzyPHTDS->defuzzify(2);
+        float outputNutrientes = fuzzyPHTDS->defuzzify(3);
         // Controlar bombas segun las salidas del sistema difuso
         int newStatusAlcalina = outputAlcalina > 0.5 ? 1 : 0;
         int newStatusAcida = outputAcida > 0.5 ? 1 : 0;
@@ -718,12 +729,14 @@ void checkActuatorsIntensity(float temperatureActuatorsOutput)
     // Solo actualizar los actuadores si es necesario
     if (fanIntensity != lastFanIntensity)
     {
-        analogWrite(FAN, fanIntensity);
+        ledcWrite(FAN_CHANNEL, fanIntensity);
+        powerFan = map(fanIntensity, 0, 255, 0, 10);
         lastFanIntensity = fanIntensity;
     }
     if (heaterIntensity != lastHeaterIntensity)
     {
-        analogWrite(HEATER, heaterIntensity);
+        powerHeater = map(heaterIntensity, 0, 255, 0, 10);
+        ledcWrite(HEATER_CHANNEL, heaterIntensity);
         lastHeaterIntensity = heaterIntensity;
     }
 }
@@ -888,21 +901,26 @@ void adjustLED(float lightfuzzyOutput)
     currentPWMValue += pwmValueChange;
     // Limitar el valor de PWM entre 0 y 255
     currentPWMValue = constrain(currentPWMValue, 0, 255);
+    // Guardar el valor del PWM transformado en un número del 0 al 10 para la interfaz
+    powerLed = map(currentPWMValue, 0, 255, 0, 10);
     // Ajustar el PWM del LED
     ledcWrite(0, currentPWMValue);
 }
 
 void checkLUM()
 {
-    float lightSensorValue = dataSensorsInfo[6];
-    float resistorValue = dataSensorsInfo[4];
-    checkLight(resistorValue, lightSensorValue);
-    float lhours = hours;
-    fuzzyLIGHT->setInput(1, lightSensorValue);
-    fuzzyLIGHT->setInput(2, lhours);
-    fuzzyLIGHT->fuzzify();
-    float lightfuzzyOutput = fuzzyLIGHT->defuzzify(1);
-    adjustLED(lightfuzzyOutput);
+    // Solo ejecutar si el modo de control del led es automático
+    if (manualORautoLed == 0){
+        float lightSensorValue = dataSensorsInfo[6];
+        float resistorValue = dataSensorsInfo[4];
+        checkLight(resistorValue, lightSensorValue);
+        float lhours = hours;
+        fuzzyLIGHT->setInput(1, lightSensorValue);
+        fuzzyLIGHT->setInput(2, lhours);
+        fuzzyLIGHT->fuzzify();
+        float lightfuzzyOutput = fuzzyLIGHT->defuzzify(1);
+        adjustLED(lightfuzzyOutput);
+    }
 }
 
 // setFuzzyLUM(): genera el sistema de logica difusa de la cantidad de luz de la plantacion
@@ -1410,7 +1428,15 @@ void sendData (){
         jsonData += "\"LumOptMax\":\"" + String(LumOptMax) + "\",";
         jsonData += "\"LumOptHrsMin\":\"" + String(LumOptHrsMin) + "\",";
         jsonData += "\"LumOptHrsMax\":\"" + String(LumOptHrsMax) + "\",";
-        jsonData += "\"pumpMode\":\"" + String(manualORauto) + "\"";
+
+        jsonData += "\"manualORauto\":\"" + String(manualORauto) + "\",";
+        jsonData += "\"manualORautoLed\":\"" + String(manualORautoLed) + "\",";
+        jsonData += "\"manualORautoFan\":\"" + String(manualORautoFan) + "\",";
+        jsonData += "\"manualORautoHeater\":\"" + String(manualORautoHeater) + "\",";
+        jsonData += "\"powerLed\":\"" + String(powerLed) + "\",";
+        jsonData += "\"powerFan\":\"" + String(powerFan) + "\",";
+        jsonData += "\"powerHeater\":\"" + String(powerHeater) + "\"";
+
         jsonData += "}";
     
         int httpResponseCode = http.POST(jsonData);
@@ -1466,7 +1492,6 @@ String extractValues() {
     }
     return value;
 }
-
 
 
 //--------------------------------------------------------------
@@ -1733,6 +1758,64 @@ void handleAjusteHum(){
     server.send(200, "application/json", "{\"mensaje\":\"Ajuste de humedad actualizado\"}");
 }
 
+void handleModeLed(){
+    manualORautoLed = (manualORautoLed + 1) % 2;
+    Serial.println("Modo de control de la tira Led: " + String(manualORautoLed));
+    server.send(200, "application/json", "{\"manualORautoLed\":\"" + String(manualORautoLed) + "\"}");
+}
+
+void handleModeFan(){
+    manualORautoFan = (manualORautoFan + 1) % 2;
+    Serial.println("Modo de control de los ventiladores " + String(manualORautoFan));
+    server.send(200, "application/json", "{\"manualORautoFan\":\"" + String(manualORautoFan) + "\"}");
+}
+
+void handleModeHeater(){
+    manualORautoHeater = (manualORautoHeater + 1) % 2;
+    Serial.println("Modo de control del calentador: " + String(manualORautoHeater));
+    server.send(200, "application/json", "{\"manualORautoHeater\":\"" + String(manualORautoHeater) + "\"}");
+}
+
+void handlePowerLed(){
+    if (manualORautoLed == 1){
+        String power = extractValues();
+        if (power != ""){
+            powerLed = power.toInt();
+            int powerPWD = map(powerLed, 0, 10, 0, 255);
+            ledcWrite(LED_CHANNEL, powerPWD);
+            Serial.println("Potencia del la tira led: " + String(power) + " \tPotencia PWM: " + String(powerPWD));
+            server.send(200, "application/json", "{\"powerLed\":\"" + String(power) + "\"}");
+        }
+    }
+}
+
+void handlePowerFan(){
+    if (manualORautoFan == 1){
+        String power = extractValues();
+        if (power != ""){
+            powerFan = power.toInt();
+            int powerPWD = map(powerFan, 0, 10, 0, 255);
+            lecWrite(FAN_CHANNEL, powerPWD);
+            Serial.println("Potencia del ventilador: " + String(power) + " \tPotencia PWM: " + String(powerPWD));
+            server.send(200, "application/json", "{\"powerFan\":\"" + String(power) + "\"}");
+        }
+    }
+}
+
+void handlePowerHeater(){
+    if (manualORautoHeater == 1){
+        String power = extractValues();
+        if (power != ""){
+            powerHeater = power.toInt();
+            int powerPWD = map(powerHeater, 0, 10, 0, 255);
+            lecWrite(HEATER_CHANNEL, powerPWD);
+            Serial.println("Potencia del calentador: " + String(power) + " \tPotencia PWM: " + String(powerPWD));
+            server.send(200, "application/json", "{\"powerHeater\":\"" + String(power) + "\"}");
+        }
+    }
+}
+
+
 void handleHorasLuz(){
     server.send(200, "application/json", "{\"horasLuz\":" + String(lightHours) + "}");
 }
@@ -1793,18 +1876,28 @@ void setup()
 
     // Conectamos el calentador y el ventilador a sus PINES correspondientes y los apagamos
     pinMode(FAN, OUTPUT);
-    pinMode(HEATER, OUTPUT);
-    analogWrite(FAN, 0);    // OFF
-    analogWrite(HEATER, 0); // OFF
+    lecSetup(FAN_CHANNEL, 1000, 8);
+    lecAttachPin(FAN, FAN_CHANNEL);
+    lecWrite(FAN_CHANNEL, 0); // OFF
 
-    // Establecemos como automatico el control de las bombas al inicio
+    pinMode(HEATER, OUTPUT);
+    lecSetup(HEATER_CHANNEL, 500, 8);
+    lecAttachPin(HEATER, HEATER_CHANNEL);
+    lecWrite(HEATER_CHANNEL, 0); // OFF
+
+    // Conectamos el LED a su PIN y lo apagamos
     pinMode(LED, OUTPUT);
-    ledcSetup(0, 1000, 8);
-    ledcAttachPin(LED, 0);
-    ledcWrite(0, 0); // OFF
+    ledcSetup(LED_CHANNEL, 5000, 8);
+    ledcAttachPin(LED, LED_CHANNEL);
+    ledcWrite(LED_CHANNEL, 0); // OFF
+
     pinMode(RESISTOR, INPUT);
+
     Wire.begin(SDA_PIN, SCL_PIN);
     manualORauto = 0;
+    manualORautoLed = 0;
+    manualORautoFan = 0;
+    manualORautoHeater = 0;
     lastChronoOn = getTime();
     delay(1000);
 
@@ -1842,6 +1935,13 @@ void setup()
     server.on("/ajustePh", HTTP_POST, handleAjustePh);
     server.on("/ajusteTemp", HTTP_POST, handleAjusteTemp);
     server.on("/ajusteHum", HTTP_POST, handleAjusteHum);
+    // Inputs de activación de los actuadores (led, ventilador y calentador)
+    server.on("/modeLed", HTTP_POST, handleModeLed);
+    server.on("/modeFan", HTTP_POST, handleModeFan);
+    server.on("/modeHeater", HTTP_POST, handleModeHeater);
+    server.on("/powerLed", HTTP_POST, handlePowerLed);
+    server.on("/powerFan", HTTP_POST, handlePowerFan);
+    server.on("/powerHeater", HTTP_POST, handlePowerHeater);
     // Peticiones para actualización en tiempo real
     server.on("/horasLuz", HTTP_GET, handleHorasLuz);
     server.on("/tiempoActBombaAuto", HTTP_GET, handleTiempoActBombaAuto);

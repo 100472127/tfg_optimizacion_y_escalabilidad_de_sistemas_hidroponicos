@@ -164,11 +164,11 @@ export default function Timers(){
     }
 
     const getManualColor = () => {
-        return manualORauto == 1 ? "bg-blue-400" : "bg-gray-700"; // Rojo
+        return manualORauto == 1 ? "bg-blue-400" : "bg-gray-400"; // Rojo
     }
 
     const getAutoColor = () => {
-        return manualORauto == 0 ? "bg-green-400" : "bg-gray-700"; // Azul
+        return manualORauto == 0 ? "bg-green-400" : "bg-gray-400"; // Azul
     }  
 
     return (

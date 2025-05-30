@@ -5,9 +5,8 @@ import Ph from '../../components/ph_components/Ph';
 import WaterLvl from '../../components/waterLvl_components/WaterLvl';
 import TempHumLum from '../../components/tempHumLum_components/TempHumLum.astro';
 import PumpControl from '../../components/pumpControl_components/PumpControl';
-import Tds from '../../components/tds_components/Tds';
+import Tds_coolHeatLed from '../../components/tds_coolHeatLed_components/Tds_coolHeatLed.astro';
 import Timers from '../../components/timers_components/Timers';
-
 
 import DataUpdater from '../../components/DataUpdater';
 
@@ -27,13 +26,13 @@ export function getStaticPaths() {
 ---
 
 <Layout title="Cuadro de Control de los Cultivos Hidropónicos">
-    <div id="pageContainer" class="bg-theme-cream rounded-lg w-full h-full over p-2">
+    <div id="pageContainer" class="bg-theme-cream rounded-lg w-full h-full over p-1">
         <DataUpdater client:only="react" id={id} />
         <Ph client:only="react"/>
         <WaterLvl client:only="react"/>
         <TempHumLum />
         <PumpControl client:only="react"/>
-        <Tds client:only="react"/>
+        <Tds_coolHeatLed />
         <Timers client:only="react"/>
     </div>
 </Layout>
