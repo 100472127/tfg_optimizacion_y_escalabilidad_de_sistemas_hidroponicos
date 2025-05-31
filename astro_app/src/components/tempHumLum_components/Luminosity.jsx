@@ -17,14 +17,24 @@ export default function Luminosity() {
             if (currentData !== null){
                 setLightSensorRead(parseFloat(currentData?.lightSensorRead).toFixed(1));
                 setLightResistorRead(currentData?.lightResistorRead);
-                setLumOptMin(parseFloat(currentData?.LumOptMin)); 
-                setLumOptMax(parseFloat(currentData?.LumOptMax).toFixed(1));
-                setLumOptHrsMin(currentData?.LumOptHrsMin);
-                setLumOptHrsMax(currentData?.LumOptHrsMax); 
             }
         }, 1000);
 
-        return () => clearInterval(interval);
+        const getInitialValues = setInterval(() => {
+            const currentData = useDataStore.getState().data;
+            if (currentData !== null){
+                setLumOptMin(parseFloat(currentData?.LumOptMin).toFixed(1)); 
+                setLumOptMax(parseFloat(currentData?.LumOptMax).toFixed(1));
+                setLumOptHrsMin(currentData?.LumOptHrsMin);
+                setLumOptHrsMax(currentData?.LumOptHrsMax); 
+                clearInterval(getInitialValues); // Limpiamos el intervalo una vez obtenidos los valores iniciales
+            }
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(getInitialValues);
+        }
     }, []);
 
     
@@ -82,6 +92,13 @@ export default function Luminosity() {
             axios.post(urlPost, { value: range })
             .then(response => {
                 console.log(`Rango enviado ${range}:`);
+                if (type === "luminosity") {
+                    setLumOptMin(parseFloat(minValue));
+                    setLumOptMax(parseFloat(maxValue));
+                } else {
+                    setLumOptHrsMin(minValue);
+                    setLumOptHrsMax(maxValue);
+                }
             })
             .catch(error => {
                 console.error(`Error al enviar el rango ${range}:`, error);

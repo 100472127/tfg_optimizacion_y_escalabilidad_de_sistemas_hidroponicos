@@ -6,7 +6,7 @@ export default function WaterLvl() {
     const [waterLvlMaxPlanRead, setWaterLvlMaxPlanRead] = useState(null);
     const [waterLvlMinMezRead, setWaterLvlMinMezRead] = useState(null);
     const [waterLvlMaxMezRead, setWaterLvlMaxMezRead] = useState(null);
-    const [waterLvlMinResRead, setWaterLvlMinResRead] = useState(null);
+    const [waterLvlMaxResRead, setWaterLvlMaxResRead] = useState(null);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -15,7 +15,7 @@ export default function WaterLvl() {
             setWaterLvlMaxPlanRead(currentData?.waterLvlMaxPlanRead);
             setWaterLvlMinMezRead(currentData?.waterLvlMinMezRead);
             setWaterLvlMaxMezRead(currentData?.waterLvlMaxMezRead);
-            setWaterLvlMinResRead(currentData?.waterLvlMinResRead);
+            setWaterLvlMaxResRead(currentData?.waterLvlMaxResRead);
         }, 1000); // 1 minuto de intervalo para la lectura los sensores de nivel de agua
       
         // Limpiar el intervalo cuando el componente se desmonte
@@ -25,19 +25,19 @@ export default function WaterLvl() {
 
     // Lógica para asignar el color de cada círculo
     const getMainCircleColor = () => {
-        if (waterLvlMinPlanRead == 1) return "bg-red-200"; // Rojo
+        if (waterLvlMinPlanRead == 0) return "bg-red-200"; // Rojo
         if (waterLvlMaxPlanRead == 1) return "bg-blue-200"; // Azul
         return "bg-theme-white"; // Blanco
     };
 
     const getMixCircleColor = () => {
-        if (waterLvlMinMezRead == 1) return "bg-red-200"; // Rojo
+        if (waterLvlMinMezRead == 0) return "bg-red-200"; // Rojo
         if (waterLvlMaxMezRead == 1) return "bg-blue-200"; // Azul
         return "bg-theme-white"; // Blanco
     };
 
     const getResCircleColor = () => {
-        if (waterLvlMinResRead == 1) return "bg-red-200"; // Rojo
+        if (waterLvlMaxResRead == 1) return "bg-blue-200"; // Azul
         return "bg-theme-white"; // Blanco
     };
 

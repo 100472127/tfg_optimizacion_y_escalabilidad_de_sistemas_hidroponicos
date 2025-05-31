@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import useDataStore from "../../store/useDataStore";
 import PhChart from "./PhChart";
 import axios from "axios";
@@ -7,21 +7,29 @@ export default function Ph() {
     const [phRead, setPhRead] = useState(null);
     const [pHOptMin, setPHOptMin] = useState(null);
     const [pHOptMax, setPHOptMax] = useState(null);
-    const [TDSOptMin, setTdsOptMin] = useState(null);
-    const [TDSOptMax, setTdsOptMax] = useState(null);
     useEffect(() => {
         const interval = setInterval(() => {
             const currentData = useDataStore.getState().data;
             if (currentData !== null){
                 setPhRead(currentData?.phRead);
-                setPHOptMin(currentData?.pHOptMin);
-                setPHOptMax(currentData?.pHOptMax); 
-                setTdsOptMin(currentData?.TDSOptMin);
-                setTdsOptMax(currentData?.TDSOptMax);
             }
         }, 1000);
 
-        return () => clearInterval(interval);
+        const getInitialValues = setInterval(() => {
+            const currentData = useDataStore.getState().data;
+            if (currentData !== null){
+                setPHOptMin(currentData?.pHOptMin);
+                useDataStore.getState().setPHOptMin(currentData?.pHOptMin);
+                setPHOptMax(currentData?.pHOptMax);
+                useDataStore.getState().setPHOptMax(currentData?.pHOptMax);
+                clearInterval(getInitialValues); // Limpiamos el intervalo una vez obtenidos los valores iniciales
+            }
+        }, 1000);
+
+        return () => {
+            clearInterval(interval)
+            clearInterval(getInitialValues);
+        }
     }, []);
 
     // Función para manejar el click de los botones de min y max
@@ -56,12 +64,19 @@ export default function Ph() {
         
         // El controlador necesita el rango de pH y TDS para ajustar la lógica difusa, por lo que enviaremos
         // el rango de pH nuevo y el rango de TDS que estaba guardado previamente para modificar solo el pH
-        if (useDataStore.getState().actualController != null){
+        console.log(useDataStore.getState().TDSOptMin, useDataStore.getState().TDSOptMax);
+        if (useDataStore.getState().actualController != null && useDataStore.getState().TDSOptMax !== null && useDataStore.getState().TDSOptMin !== null) {
+            const TDSOptMin = useDataStore.getState().TDSOptMin;
+            const TDSOptMax = useDataStore.getState().TDSOptMax;
             const urlPost = useDataStore.getState().url + "/ajustePh/" + useDataStore.getState().actualController;
             const ranges = pHMin + "-" + pHMax + ";" + TDSOptMin + "-" + TDSOptMax;
             axios.post(urlPost, { value: ranges })
             .then(response => {
                 console.log(`Rango enviado ${ranges}:`);
+                setPHOptMin(pHMin);
+                useDataStore.getState().setPHOptMin(pHMin);
+                setPHOptMax(pHMax);
+                useDataStore.getState().setPHOptMax(pHMax);
             })
             .catch(error => {
                 console.error(`Error al enviar el rango ${ranges}:`, error);

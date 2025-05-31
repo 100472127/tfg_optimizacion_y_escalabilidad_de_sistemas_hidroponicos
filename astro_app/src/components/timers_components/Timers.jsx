@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import useDataStore from "../../store/useDataStore";
 import axios from "axios";
 
@@ -9,14 +9,15 @@ export default function Timers(){
     const [pumpTimer, setPumpTimer] = useState("loading ...");
 
     useEffect(() => {
-        // Intervalo para obtener el estado de manualORauto cada tres segundos para poder cambiar el timer de la bomba
+        // Obtenemos el estado inicial de manualORauto
         const interval = setInterval(() => {
             const currentData = useDataStore.getState().data; 
-            if(currentData !== null){
+            if(currentData != null){
                 setManualORauto(currentData?.manualORauto);
-                console.log("Estado de manualORauto en timers:", currentData?.manualORauto);
+                useDataStore.getState().setManualORauto(currentData?.manualORauto);
+                clearInterval(interval); // Limpiar el intervalo después de obtener los datos
             }
-        }, 3000);
+        }, 1000);
 
         const fetchObtainSprayAndPumpTimer = async () => {
             const id = useDataStore.getState().actualController;
@@ -80,16 +81,18 @@ export default function Timers(){
     }, []);
 
     const handleButtonOnOffClick = () => {
-        if(manualORauto === 0 ? setManualORauto(1) : setManualORauto(0)); // Cambia entre 0 y 1
+        let newManualORauto = manualORauto == 0 ? 1 : 0; // Cambia entre manual (1) y automático (0)
         const id = useDataStore.getState().actualController;
         if (id !== null){
             const urlPost = useDataStore.getState().url + `/selectControlMode/${id}`;
-            axios.post(urlPost, { value: manualORauto })
+            axios.post(urlPost, { value: newManualORauto })
             .then(response => {
-                console.log(`Modo bomba enviado ${manualORauto}:`);
+                console.log(`Modo bomba enviado ${newManualORauto}:`);
+                setManualORauto(newManualORauto); // Actualiza el estado local
+                useDataStore.getState().setManualORauto(newManualORauto);
             })
             .catch(error => {
-                console.error(`Error al enviar el modo bomba ${manualORauto}:`, error);
+                console.error(`Error al enviar el modo bomba ${newManualORauto}:`, error);
             });
         }
     }

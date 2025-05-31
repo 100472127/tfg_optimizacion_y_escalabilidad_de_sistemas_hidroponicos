@@ -13,12 +13,22 @@ export default function Temperature() {
             const currentData = useDataStore.getState().data;
             if (currentData != null){
                 setTempRead(parseFloat(currentData?.tempRead).toFixed(1));
-                setTempOptMin(parseFloat(currentData?.TempOptMin));
-                setTempOptMax(parseFloat(currentData?.TempOptMax)); 
             }
         }, 1000);
 
-        return () => clearInterval(interval);
+        const getInitialValues = setInterval(() => {
+            const currentData = useDataStore.getState().data;
+            if (currentData !== null){
+                setTempOptMin(parseFloat(currentData?.TempOptMin));
+                setTempOptMax(parseFloat(currentData?.TempOptMax)); 
+                clearInterval(getInitialValues); // Limpiamos el intervalo una vez obtenidos los valores iniciales
+            }
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(getInitialValues);
+        }
     }, []);
 
     useEffect(() => {
@@ -69,6 +79,8 @@ export default function Temperature() {
             axios.post(urlPost, { value: range })
             .then(response => {
                 console.log(`Rango enviado ${range}:`);
+                setTempOptMin(tempMin);
+                setTempOptMax(tempMax);
             })
             .catch(error => {
                 console.error(`Error al enviar el rango ${range}:`, error);

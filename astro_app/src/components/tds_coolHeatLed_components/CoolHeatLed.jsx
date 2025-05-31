@@ -1,27 +1,62 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import useDataStore from "../../store/useDataStore";
 import axios from "axios";
 
 export default function CoolHeatLed() {
-	const [ledMode, setLedMode] = useState(1); // 0 automático, 1 manual
+	const [ledMode, setLedMode] = useState(0); // 0 automático, 1 manual
 	const [fanMode, setfanMode] = useState(0);
 	const [heaterMode, setHeaterMode] = useState(0);
 	const [ledPower, setLedPower] = useState(null);
 	const [fanPower, setFanPower] = useState(null);
 	const [heaterPower, setHeaterPower] = useState(null);
 
+    // Refs para mantener los valores actualizados
+	const ledModeRef = useRef(ledMode);
+	const fanModeRef = useRef(fanMode);
+	const heaterModeRef = useRef(heaterMode)
+
+    // Sincronizamos las refs con el estado actual en cada render
 	useEffect(() => {
-		const interval = setInterval(() => {
+		ledModeRef.current = ledMode;
+		fanModeRef.current = fanMode;
+		heaterModeRef.current = heaterMode;
+	}, [ledMode, fanMode, heaterMode]);
+
+	useEffect(() => {
+		const getInitialValues = setInterval(() => {
 			const currentData = useDataStore.getState().data;
 			if (currentData !== null) {
-				setLedMode(currentData?.manualORautoLED);
+				setLedMode(currentData?.manualORautoLed);
 				setfanMode(currentData?.manualORautoFan);
 				setHeaterMode(currentData?.manualORautoHeater);
-				setLedPower(currentData?.ledPower);
-				setFanPower(currentData?.fanPower);
-				setHeaterPower(currentData?.heaterPower);
+				setLedPower(currentData?.powerLed);
+				setFanPower(currentData?.powerFan);
+				setHeaterPower(currentData?.powerHeater);
+                clearInterval(getInitialValues); // Limpiar el intervalo después de obtener los datos
 			}
-		}, 2000);
+		}, 1000);
+
+        // Si está en automático (0), la lógica difusa actualiza los valores de potencia y tenemos que actualizarlos en la interfaz
+        const updatePowerValues = setInterval(() => {
+            const currentData = useDataStore.getState().data;
+            if (currentData !== null) {
+				if (ledModeRef.current === 0) {
+					setLedPower(currentData?.powerLed);
+				}
+				if (fanModeRef.current === 0) {
+					setFanPower(currentData?.powerFan);
+				}
+				if (heaterModeRef.current === 0) {
+					setHeaterPower(currentData?.powerHeater);
+				}
+            }
+        }, 10000);
+
+        // Limpiar el intervalo cuando el componente se desmonte
+        return () => {
+            clearInterval(getInitialValues);
+            clearInterval(updatePowerValues);
+        };
 	}, []);
 
 	const handleBgColor = (mode) => {
@@ -36,19 +71,23 @@ export default function CoolHeatLed() {
 	const handleMode = (actuator) => {
         const urlPost = useDataStore.getState().url + "/mode" + actuator + "/" + useDataStore.getState().actualController;
         let mode = 0;
-        if (actuator === "Led") {
-            setLedMode(ledMode === 0 ? 1 : 0);
-            mode = ledMode;
-        } else if (actuator === "Fan") {
-            setfanMode(fanMode === 0 ? 1 : 0);
-            mode = fanMode;
-        } else if (actuator === "Heater") {
-            setHeaterMode(heaterMode === 0 ? 1 : 0);
-            mode = heaterMode;
+        if (actuator == "Led") {
+            mode = ledMode == 0 ? 1 : 0;
+        } else if (actuator == "Fan") {
+            mode = fanMode == 0 ? 1 : 0;
+        } else if (actuator == "Heater") {
+            mode = heaterMode == 0 ? 1 : 0;
         }
         axios.post(urlPost, { value: mode.toString()})
         .then(response => {
             console.log("Modo del " + actuator + " actualizado: ", mode);
+            if (actuator == "Led") {
+                setLedMode(mode);
+            } else if (actuator == "Fan") {
+                setfanMode(mode);
+            } else if (actuator == "Heater") {
+                setHeaterMode(mode);
+            }
         })
         .catch(error => {
             console.error("Error al actualizar el modo del " + actuator + ":", error);
@@ -56,7 +95,8 @@ export default function CoolHeatLed() {
     };
 
 	const handlePower = (actuator) => {
-        if (actuator === "Led" && ledMode == 1 || actuator === "Fan" && fanMode == 1 || actuator === "Heater" && heaterMode == 1) {
+        if (actuator == "Led" && ledMode == 1 || actuator == "Fan" && fanMode == 1 || actuator == "Heater" && heaterMode == 1) {
+            let power;
             do {
                 power = prompt("Ingrese la potencia del " + actuator + " (0-10):");
                 if (power === null) {
@@ -71,9 +111,17 @@ export default function CoolHeatLed() {
 
             if (useDataStore.getState().actualController != null) {
                 const urlPost = useDataStore.getState().url + "/power" + actuator + "/" + useDataStore.getState().actualController;
+                console.log(urlPost);
                 axios.post(urlPost, { value: power })
                 .then(response => {
                     console.log("Potencia del " + actuator + " actualizada:", response.data);
+                    if (actuator == "Led") {
+                        setLedPower(power);
+                    } else if (actuator == "Fan") {
+                        setFanPower(power);
+                    } else if (actuator == "Heater") {
+                        setHeaterPower(power);
+                    }
                 })
                 .catch(error => {
                     console.error("Error al actualizar la potencia del " + actuator + ":", error);
@@ -142,7 +190,7 @@ export default function CoolHeatLed() {
 				</div>
 
 				{/* Fila Heater */}
-				<div className="flex items-center justify-center">Heater</div>
+				<div className="flex items-center justify-center">Calentador</div>
 				<div className="flex items-center justify-center">
 					<button
 						onClick={() => handleMode("Heater")}

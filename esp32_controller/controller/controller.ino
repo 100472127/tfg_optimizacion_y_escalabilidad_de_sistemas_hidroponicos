@@ -1,7 +1,7 @@
 // Librerias
 #include <WiFi.h>
-#include <HTTPClient.h> 
-#include <WebServer.h> 
+#include <HTTPClient.h>
+#include <WebServer.h>
 #include <ArduinoJson.h>
 #include <DHT.h>
 #include <ESP32Servo.h>
@@ -12,15 +12,12 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TSL2561_U.h>
 
-
 // Identificador del microcontrolador
 #define CONTROLLER_ID "1"
-
 
 // Configuración de conexión WiFi
 #define WIFI_SSID ""
 #define WIFI_PSWD ""
-
 
 // PINS
 #define WATERLVLSENSORPIN 27
@@ -49,13 +46,13 @@
 // Canales para la configuración del PWM de los actuadores
 #define LED_CHANNEL 0
 #define FAN_CHANNEL 1
-#define HEATER_CHANNEL 2 
+#define HEATER_CHANNEL 2
 
 // Variable para guardar la IP que se le asignará al microcontrolador al conectarse a la red wifi
 String ip_value;
 
 // URL del servidor principal (Raspberry Pi)
-const char* serverUrl = "http://192.168.73.200:3000";
+const char *serverUrl = "http://192.168.73.200:3000";
 
 // Creamos un pequeño servidor web local en el puerto 80
 WebServer server(80);
@@ -68,12 +65,10 @@ float dataSensorsInfo[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int statusPumps[6] = {0, 0, 0, 0, 0, 0};
 int currentPWMValue = 0;
 
-
 // Sensores y actuadores
 DHT dht(HUMIDITYSENSOR, DHTTYPE);
 Servo sprayServo;
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT);
-
 
 // Otras variables de sistema
 const float RESISTOR_THRESHOLD = 1.0;
@@ -103,7 +98,7 @@ int powerLed = 0;
 int powerFan = 0;
 int powerHeater = 0;
 unsigned long lastChronoOn = 0;
-
+unsigned long lastDataSendTime = 0;
 
 // Guardado en flash de variables
 Preferences preferences;
@@ -131,21 +126,23 @@ float LumOptMax = 20000;
 float LumOptHrsMin = 14;
 float LumOptHrsMax = 16;
 
-//Función para obtener el tiempo actual
-unsigned long getTime() {
+// Función para obtener el tiempo actual
+unsigned long getTime()
+{
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo)) {
+    if (!getLocalTime(&timeinfo))
+    {
         Serial.println("Failed to obtain time");
         return 0;
     }
-    return mktime(&timeinfo);  // Convierte la estructura de tiempo en timestamp UNIX
+    return mktime(&timeinfo); // Convierte la estructura de tiempo en timestamp UNIX
 }
 
 // Funcion para obtener el dia actual
-float getActualDay() {
+float getActualDay()
+{
     return (((getTime() / 86400) + 4) % 7);
 }
-
 
 // ------------------------------
 // FUNCIONES CONTROL DEL PH y TDS
@@ -196,51 +193,51 @@ void setFuzzyPHTDS()
 
     // Definir el conjunto difuso para pH
     FuzzyInput *inputPH = new FuzzyInput(1);
-    FuzzySet *veryLowPH = new FuzzySet(0, 0, 3, 4);          // Muy baja
+    FuzzySet *veryLowPH = new FuzzySet(0, 0, 3, 4); // Muy baja
     inputPH->addFuzzySet(veryLowPH);
-    FuzzySet *lowPH = new FuzzySet(3, 3.5, 5, 5.5);             // Baja
+    FuzzySet *lowPH = new FuzzySet(3, 3.5, 5, 5.5); // Baja
     inputPH->addFuzzySet(lowPH);
-    FuzzySet *optimalPH = new FuzzySet(5, 5.5, 6.5, 7);       // Optimo
+    FuzzySet *optimalPH = new FuzzySet(5, 5.5, 6.5, 7); // Optimo
     inputPH->addFuzzySet(optimalPH);
-    FuzzySet *highPH = new FuzzySet(6.5, 7, 8, 10);             // Alta
+    FuzzySet *highPH = new FuzzySet(6.5, 7, 8, 10); // Alta
     inputPH->addFuzzySet(highPH);
-    FuzzySet *veryHighPH = new FuzzySet(8, 8.5, 14, 14);     // Muy alta
+    FuzzySet *veryHighPH = new FuzzySet(8, 8.5, 14, 14); // Muy alta
     inputPH->addFuzzySet(veryHighPH);
     fuzzyPHTDS->addFuzzyInput(inputPH);
 
     // Definir el conjunto difuso para TDS
     FuzzyInput *inputTDS = new FuzzyInput(2);
-    FuzzySet *veryLowTDS = new FuzzySet(0, 0, 400, 500);                // Muy baja
+    FuzzySet *veryLowTDS = new FuzzySet(0, 0, 400, 500); // Muy baja
     inputTDS->addFuzzySet(veryLowTDS);
-    FuzzySet *lowTDS = new FuzzySet(300, 500, 750, 800);                    //Baja
+    FuzzySet *lowTDS = new FuzzySet(300, 500, 750, 800); // Baja
     inputTDS->addFuzzySet(lowTDS);
-    FuzzySet *optimalTDS = new FuzzySet(750, 800, 1200, 1250);            //Optima
+    FuzzySet *optimalTDS = new FuzzySet(750, 800, 1200, 1250); // Optima
     inputTDS->addFuzzySet(optimalTDS);
-    FuzzySet *highTDS = new FuzzySet(1200, 1250, 1400, 1450);               //Alta
+    FuzzySet *highTDS = new FuzzySet(1200, 1250, 1400, 1450); // Alta
     inputTDS->addFuzzySet(highTDS);
-    FuzzySet *veryHighTDS = new FuzzySet(1300, 1450, 1500, 1500);       //Muy alta
+    FuzzySet *veryHighTDS = new FuzzySet(1300, 1450, 1500, 1500); // Muy alta
     inputTDS->addFuzzySet(veryHighTDS);
     fuzzyPHTDS->addFuzzyInput(inputTDS);
 
     // Definir el conjunto difuso para bombas
     FuzzyOutput *outputBombaAlcalina = new FuzzyOutput(1);
-    FuzzySet *activateAlkaline = new FuzzySet(0.5, 1, 1, 1.5);             // Activar
+    FuzzySet *activateAlkaline = new FuzzySet(0.5, 1, 1, 1.5); // Activar
     outputBombaAlcalina->addFuzzySet(activateAlkaline);
-    FuzzySet *noActivateAlkaline = new FuzzySet(-0.5, 0, 0, 0.5);          // No activar
+    FuzzySet *noActivateAlkaline = new FuzzySet(-0.5, 0, 0, 0.5); // No activar
     outputBombaAlcalina->addFuzzySet(noActivateAlkaline);
     fuzzyPHTDS->addFuzzyOutput(outputBombaAlcalina);
 
     FuzzyOutput *outputBombaAcida = new FuzzyOutput(2);
-    FuzzySet *activateAcidic = new FuzzySet(0.5, 1, 1, 1.5);               // Activar
+    FuzzySet *activateAcidic = new FuzzySet(0.5, 1, 1, 1.5); // Activar
     outputBombaAcida->addFuzzySet(activateAcidic);
-    FuzzySet *noActivateAcidic = new FuzzySet(-0.5, 0, 0, 0.5);            // No activar
+    FuzzySet *noActivateAcidic = new FuzzySet(-0.5, 0, 0, 0.5); // No activar
     outputBombaAcida->addFuzzySet(noActivateAcidic);
     fuzzyPHTDS->addFuzzyOutput(outputBombaAcida);
 
     FuzzyOutput *outputBombaNutrientes = new FuzzyOutput(3);
-    FuzzySet *activateNutrients = new FuzzySet(0.5, 1, 1, 1.5);            // Activar
+    FuzzySet *activateNutrients = new FuzzySet(0.5, 1, 1, 1.5); // Activar
     outputBombaNutrientes->addFuzzySet(activateNutrients);
-    FuzzySet *noActivateNutrients = new FuzzySet(-0.5, 0, 0, 0.5);         // No activar
+    FuzzySet *noActivateNutrients = new FuzzySet(-0.5, 0, 0, 0.5); // No activar
     outputBombaNutrientes->addFuzzySet(noActivateNutrients);
     fuzzyPHTDS->addFuzzyOutput(outputBombaNutrientes);
 
@@ -725,16 +722,16 @@ void checkActuatorsIntensity(float temperatureActuatorsOutput)
     heaterIntensity = constrain(heaterIntensity, 0, 255);
 
     // Solo actualizar los actuadores si es necesario
-    if (fanIntensity != lastFanIntensity)
+    if (fanIntensity != lastFanIntensity && manualORautoFan == 0)
     {
         ledcWrite(FAN_CHANNEL, fanIntensity);
         powerFan = map(fanIntensity, 0, 255, 0, 10);
         lastFanIntensity = fanIntensity;
     }
-    if (heaterIntensity != lastHeaterIntensity)
+    if (heaterIntensity != lastHeaterIntensity && manualORautoHeater == 0)
     {
-        powerHeater = map(heaterIntensity, 0, 255, 0, 10);
         ledcWrite(HEATER_CHANNEL, heaterIntensity);
+        powerHeater = map(heaterIntensity, 0, 255, 0, 10);
         lastHeaterIntensity = heaterIntensity;
     }
 }
@@ -904,7 +901,8 @@ void adjustLED(float lightfuzzyOutput)
 void checkLUM()
 {
     // Solo ejecutar si el modo de control del led es automático
-    if (manualORautoLed == 0){
+    if (manualORautoLed == 0)
+    {
         float lightSensorValue = dataSensorsInfo[6];
         float resistorValue = dataSensorsInfo[4];
         checkLight(resistorValue, lightSensorValue);
@@ -1372,14 +1370,15 @@ void controlLiquidos()
     }
 }
 
-
 //-----------------------------------------------
-//FUNCIONES NUEVAS PARA EL CAMBIO DE ARQUITECTURA
+// FUNCIONES NUEVAS PARA EL CAMBIO DE ARQUITECTURA
 //-----------------------------------------------
 
 // Función para enviar la información que detectan los sensores al servidor principal
-void sendData (){
-    if (WiFi.status() == WL_CONNECTED) {
+void sendData()
+{
+    if (WiFi.status() == WL_CONNECTED)
+    {
         HTTPClient http;
         String fullUrl = String(serverUrl) + "/data/" + String(CONTROLLER_ID);
         http.begin(fullUrl);
@@ -1397,8 +1396,8 @@ void sendData (){
         jsonData += "\"waterLvlMaxPlanRead\":\"" + String(dataSensorsInfo[10]) + "\",";
         jsonData += "\"waterLvlMinMezRead\":\"" + String(dataSensorsInfo[7]) + "\",";
         jsonData += "\"waterLvlMaxMezRead\":\"" + String(dataSensorsInfo[8]) + "\",";
-        jsonData += "\"waterLvlMinResRead\":\"" + String(dataSensorsInfo[9]) + "\",";
-        
+        jsonData += "\"waterLvlMaxResRead\":\"" + String(dataSensorsInfo[9]) + "\",";
+
         jsonData += "\"statusBombaAcida\":\"" + String(statusPumps[0]) + "\",";
         jsonData += "\"statusBombaAlcalina\":\"" + String(statusPumps[1]) + "\",";
         jsonData += "\"statusBombaMezcla\":\"" + String(statusPumps[2]) + "\",";
@@ -1428,23 +1427,30 @@ void sendData (){
         jsonData += "\"powerHeater\":\"" + String(powerHeater) + "\"";
 
         jsonData += "}";
-    
+
         int httpResponseCode = http.POST(jsonData);
 
-        if (httpResponseCode == 200) {
+        if (httpResponseCode == 200)
+        {
             Serial.println("OK: /data/" + String(CONTROLLER_ID) + " (" + httpResponseCode + ") " + http.getString());
-        } else {
+        }
+        else
+        {
             Serial.println("ERROR: /data/" + String(CONTROLLER_ID) + " (" + httpResponseCode + ") " + http.getString());
         }
         http.end();
-    } else {
+    }
+    else
+    {
         Serial.println("ERROR: /sendData: No conectado a WiFi");
     }
 }
 
 // Función que se ejecuta en el setup para enviar el ID y la IP asignada al microcontrolador al servidor principal
-void sendIP(){
-    if(WiFi.status() == WL_CONNECTED) {
+void sendIP()
+{
+    if (WiFi.status() == WL_CONNECTED)
+    {
         HTTPClient http;
         String fullUrl = String(serverUrl) + "/ipAssignment";
         http.begin(fullUrl);
@@ -1458,111 +1464,141 @@ void sendIP(){
 
         int httpResponseCode = http.POST(jsonData);
 
-        if (httpResponseCode == 200) {
+        if (httpResponseCode == 200)
+        {
             Serial.println("OK: /ipAssignment (" + String(httpResponseCode) + ") " + http.getString());
-        } else {
+        }
+        else
+        {
             Serial.println("ERROR: /ipAssignment (" + String(httpResponseCode) + ") " + http.getString());
         }
 
         http.end(); // Finalizar conexión
-    } else {
+    }
+    else
+    {
         Serial.println("ERROR: /ipAssignment: No conectado a WiFi");
     }
 }
 
 // Función que extrae el los valores de la petición POST {value: "valor"}, y los devuelve en un vector
-String extractValues() {
+String extractValues()
+{
     String jsonString = server.arg("plain");
     String value = "";
     // Deserializar el JSON para extraer el valor
     DynamicJsonDocument doc(200);
     DeserializationError error = deserializeJson(doc, jsonString);
-    if (!error) {
+    if (!error)
+    {
         value = doc["value"].as<String>();
     }
     return value;
 }
 
-
 //--------------------------------------------------------------
-//FUNCIONES PARA GESTIONAR LAS PETICIONES DEL SERVIDOR PRINCIPAL
+// FUNCIONES PARA GESTIONAR LAS PETICIONES DEL SERVIDOR PRINCIPAL
 //--------------------------------------------------------------
-
 
 // Al recibir la petición cambia el estatus de la bomba acida a 1 o 0
-void handleBombaAcida(){
-    if (manualORauto == 1) {
+void handleBombaAcida()
+{
+    if (manualORauto == 1)
+    {
         statusPumps[0] = extractValues().toInt();
         digitalWrite(BOMBAACIDA, statusPumps[0]);
         Serial.println("Valor de la bomba acida: " + String(statusPumps[0]));
         server.send(200, "application/json", "{\"mensaje\":\"Status bomba acida actualizada\"}");
-    } else {
+    }
+    else
+    {
         server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
     }
 }
 
 // Al recibir la petición cambia el estatus de la bomba alcalina a 1 o 0
-void handleBombaAlcalina(){
-    if (manualORauto == 1){
+void handleBombaAlcalina()
+{
+    if (manualORauto == 1)
+    {
         statusPumps[1] = extractValues().toInt();
         digitalWrite(BOMBAACIDA, statusPumps[1]);
         Serial.println("Valor de la bomba alcalina: " + String(statusPumps[1]));
         server.send(200, "application/json", "{\"mensaje\":\"Status bomba alcalina actualizada\"}");
-    } else {
+    }
+    else
+    {
         server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
     }
 }
 
 // Al recibir la petición cambia el estatus de la bomba de mezcla a 1 o 0
-void handleBombaMezcla(){
-    if (manualORauto == 1){
+void handleBombaMezcla()
+{
+    if (manualORauto == 1)
+    {
         statusPumps[2] = extractValues().toInt();
         digitalWrite(BOMBAACIDA, statusPumps[2]);
         Serial.println("Valor de la bomba mezcla: " + String(statusPumps[2]));
         server.send(200, "application/json", "{\"mensaje\":\"Status bomba mezcla actualizada\"}");
-    } else{
+    }
+    else
+    {
         server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
     }
 }
 
 // Al recibir la petición cambia el estatus de la bomba de mezcla a 1 o 0
-void handleBombaNutrientes(){
-    if (manualORauto == 1){
+void handleBombaNutrientes()
+{
+    if (manualORauto == 1)
+    {
         statusPumps[3] = extractValues().toInt();
         digitalWrite(BOMBANUTRIENTES, statusPumps[3]);
         Serial.println("Valor de la bomba nutrientes: " + String(statusPumps[3]));
         server.send(200, "application/json", "{\"mensaje\":\"Status bomba nutrientes actualizada\"}");
-    } else {
+    }
+    else
+    {
         server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
     }
 }
 
 // Al recibir la petición cambia el estatus de la bomba de mezcla a 1 o 0
-void handleBombaMezclaResiduos(){
-    if (manualORauto == 1){
+void handleBombaMezclaResiduos()
+{
+    if (manualORauto == 1)
+    {
         statusPumps[4] = extractValues().toInt();
         digitalWrite(BOMBAACIDA, statusPumps[4]);
         Serial.println("Valor de la bomba mezclaResiduos: " + String(statusPumps[4]));
-        server.send(200, "application/json", "{\"mensaje\":\"Status bomba mezclaResiduos actualizada\"}");    
-    } else {
+        server.send(200, "application/json", "{\"mensaje\":\"Status bomba mezclaResiduos actualizada\"}");
+    }
+    else
+    {
         server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
     }
 }
 
 // Al recibir la petición cambia el estatus de la bomba de mezcla a 1 o 0
-void handleBombaResiduos(){
-    if (manualORauto == 1){
+void handleBombaResiduos()
+{
+    if (manualORauto == 1)
+    {
         statusPumps[5] = extractValues().toInt();
         digitalWrite(BOMBAACIDA, statusPumps[5]);
         Serial.println("Valor de la bomba residuos: " + String(statusPumps[5]));
         server.send(200, "application/json", "{\"mensaje\":\"Status bomba residuos actualizada\"}");
-    } else {
+    }
+    else
+    {
         server.send(400, "application/json", "{\"mensaje\":\"El modo manual está desactivado.\"}");
     }
 }
 
 // Al recibir la petición activa el spray
-void handleSpray(){
+void handleSpray()
+{
     Serial.println("Spray activado");
     sprayServo.write(45);
     delay(1000);
@@ -1572,14 +1608,16 @@ void handleSpray(){
 }
 
 // Al recibir la petición cambia el modo de control de manual a automático y viceversa y devuelve el nuevo modo
-void handleSelectControlMode(){
+void handleSelectControlMode()
+{
     manualORauto = (manualORauto + 1) % 2;
     Serial.println("Modo de control de las bombas: " + String(manualORauto));
     server.send(200, "application/json", "{\"manualORauto\":\"" + String(manualORauto) + "\"}");
 }
 
 // Recibe el tiempo en segundos para el intervalo de activación de la bomba con el formato {value: "valor"}
-void handleAjustePumpAutoUse(){
+void handleAjustePumpAutoUse()
+{
     pumpUseInterval = extractValues().toFloat();
     preferences.begin("PumpInterval", false);
     preferences.putFloat("pumpUseIntervalRange", pumpUseInterval);
@@ -1589,7 +1627,8 @@ void handleAjustePumpAutoUse(){
 }
 
 // Recibe el tiempo en segundos para el intervalo de activación del spray con el formato {value: "valor"}
-void handleAjusteSprayUse(){
+void handleAjusteSprayUse()
+{
     sprayUseInterval = extractValues().toInt();
     preferences.begin("SprayInterval", false);
     preferences.putFloat("sprayUseIntervalRange", sprayUseInterval);
@@ -1606,23 +1645,31 @@ void handleAjusteSprayUse(){
 }
 
 // Recibe el mínimo valor óptimo de luz con el formato {value: "valor"}
-void handleAjusteLum(){
+void handleAjusteLum()
+{
     String range = extractValues();
     int separatorIndex = range.indexOf('-');
-    if (separatorIndex != -1){ 
+    if (separatorIndex != -1)
+    {
         String LumOptMinReceived = range.substring(0, separatorIndex);
-        if (LumOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+        if (LumOptMinReceived != "auto")
+        { // Si no es "auto" es un número float
             LumOptMin = LumOptMinReceived.toFloat();
-        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+        }
+        else
+        { // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
             LumOptMin = 10000.0;
         }
         String LumOptMaxReceived = range.substring(separatorIndex + 1);
-        if (LumOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+        if (LumOptMaxReceived != "auto")
+        { // Si no es "auto" es un número float
             LumOptMax = LumOptMaxReceived.toFloat();
-        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+        }
+        else
+        { // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
             LumOptMax = 20000.0;
         }
-    } 
+    }
     preferences.begin("LUMMin", false);
     preferences.putFloat("lumMinData", LumOptMin);
     preferences.end();
@@ -1635,23 +1682,31 @@ void handleAjusteLum(){
 }
 
 // Recibe el mínimo y máximo número de horas de luz necesarias con el formato {value: "min-max"}
-void handleAjusteLumHours(){
+void handleAjusteLumHours()
+{
     String range = extractValues();
     int separatorIndex = range.indexOf('-');
-    if (separatorIndex != -1){ // Se envía un rango 
+    if (separatorIndex != -1)
+    { // Se envía un rango
         String LumOptHrsMinReceived = range.substring(0, separatorIndex);
-        if (LumOptHrsMinReceived != "auto"){
+        if (LumOptHrsMinReceived != "auto")
+        {
             LumOptHrsMin = LumOptHrsMinReceived.toFloat();
-        } else {     // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+        }
+        else
+        { // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
             LumOptHrsMin = 14.0;
         }
         String LumOptHrsMaxReceived = range.substring(separatorIndex + 1);
-        if (LumOptHrsMaxReceived != "auto"){
+        if (LumOptHrsMaxReceived != "auto")
+        {
             LumOptHrsMax = LumOptHrsMaxReceived.toFloat();
-        } else {
+        }
+        else
+        {
             LumOptHrsMax = 16.0;
         }
-    } 
+    }
     preferences.begin("LUMHRSMin", false);
     preferences.putFloat("lumHrsMinData", LumOptHrsMin);
     preferences.end();
@@ -1662,7 +1717,8 @@ void handleAjusteLumHours(){
     server.send(200, "application/json", "{\"mensaje\":\"Ajuste de rango de horas de luz actualizado\"}");
 }
 
-void handleAjustePh(){
+void handleAjustePh()
+{
     String ranges = extractValues();
     int rangesSeparatorIndex = ranges.indexOf(';');
     String rangesPh = ranges.substring(0, rangesSeparatorIndex);
@@ -1670,17 +1726,24 @@ void handleAjustePh(){
     int phSeparatorIndex = rangesPh.indexOf('-');
     int tdsSeparatorIndex = rangesTDS.indexOf('-');
 
-    if (phSeparatorIndex != -1){
+    if (phSeparatorIndex != -1)
+    {
         String pHOptMinReceived = rangesPh.substring(0, phSeparatorIndex);
-        if(pHOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+        if (pHOptMinReceived != "auto")
+        { // Si no es "auto" es un número float
             pHOptMin = pHOptMinReceived.toFloat();
-        } else{
-            pHOptMin = 5.5;     // Si es auto se establece un número por defecto
+        }
+        else
+        {
+            pHOptMin = 5.5; // Si es auto se establece un número por defecto
         }
         String pHOptMaxReceived = rangesPh.substring(phSeparatorIndex + 1);
-        if(pHOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+        if (pHOptMaxReceived != "auto")
+        { // Si no es "auto" es un número float
             pHOptMax = pHOptMaxReceived.toFloat();
-        } else{
+        }
+        else
+        {
             pHOptMax = 6.5;
         }
     }
@@ -1691,17 +1754,24 @@ void handleAjustePh(){
     preferences.putFloat("phMaxData", pHOptMax);
     preferences.end();
 
-    if (tdsSeparatorIndex != -1){
+    if (tdsSeparatorIndex != -1)
+    {
         String TDSOptMinReceived = rangesTDS.substring(0, tdsSeparatorIndex);
-        if(TDSOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+        if (TDSOptMinReceived != "auto")
+        { // Si no es "auto" es un número float
             TDSOptMin = TDSOptMinReceived.toFloat();
-        } else{
+        }
+        else
+        {
             TDSOptMin = 800.0;
         }
         String TDSOptMaxReceived = rangesTDS.substring(tdsSeparatorIndex + 1);
-        if(TDSOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+        if (TDSOptMaxReceived != "auto")
+        { // Si no es "auto" es un número float
             TDSOptMax = TDSOptMaxReceived.toFloat();
-        } else{
+        }
+        else
+        {
             TDSOptMax = 1200.0;
         }
     }
@@ -1712,30 +1782,39 @@ void handleAjustePh(){
     preferences.begin("TDSMax", false);
     preferences.putFloat("TDSMaxData", TDSOptMax);
     preferences.end();
-    setFuzzyPHTDS();    
+    setFuzzyPHTDS();
     Serial.println("Rango óptimo del PH: " + String(pHOptMin) + " - " + String(pHOptMax) + "\n"
-                   "Rango óptimo del TDS: " + String(TDSOptMin) + " - " + String(TDSOptMax));
+                                                                                           "Rango óptimo del TDS: " +
+                   String(TDSOptMin) + " - " + String(TDSOptMax));
     server.send(200, "application/json", "{\"mensaje\":\"Ajuste de pH y TDS actualizado\"}");
 }
 
-void handleAjusteTemp(){
+void handleAjusteTemp()
+{
     String range = extractValues();
     int separatorIndex = range.indexOf('-');
 
-    if(separatorIndex != -1){
+    if (separatorIndex != -1)
+    {
         String TempOptMinReceived = range.substring(0, separatorIndex);
-        if(TempOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+        if (TempOptMinReceived != "auto")
+        { // Si no es "auto" es un número float
             TempOptMin = TempOptMinReceived.toFloat();
-        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+        }
+        else
+        { // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
             TempOptMin = 60.0;
         }
         String TempOptMaxReceived = range.substring(separatorIndex + 1);
-        if(TempOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+        if (TempOptMaxReceived != "auto")
+        { // Si no es "auto" es un número float
             TempOptMax = TempOptMaxReceived.toFloat();
-        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+        }
+        else
+        { // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
             TempOptMax = 75.0;
         }
-    } 
+    }
     preferences.begin("TEMPMin", false);
     preferences.putFloat("tempMinData", TempOptMin);
     preferences.end();
@@ -1746,24 +1825,32 @@ void handleAjusteTemp(){
     server.send(200, "application/json", "{\"mensaje\":\"Ajuste de temperatura actualizado\"}");
 }
 
-void handleAjusteHum(){
+void handleAjusteHum()
+{
     String range = extractValues();
     int separatorIndex = range.indexOf('-');
-    
-    if(separatorIndex != -1){
+
+    if (separatorIndex != -1)
+    {
         String HumOptMinReceived = range.substring(0, separatorIndex);
-        if(HumOptMinReceived != "auto"){ // Si no es "auto" es un número float 
+        if (HumOptMinReceived != "auto")
+        { // Si no es "auto" es un número float
             HumOptMin = HumOptMinReceived.toFloat();
-        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+        }
+        else
+        { // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
             HumOptMin = 14.0;
         }
         String HumOptMaxReceived = range.substring(separatorIndex + 1);
-        if(HumOptMaxReceived != "auto"){ // Si no es "auto" es un número float 
+        if (HumOptMaxReceived != "auto")
+        { // Si no es "auto" es un número float
             HumOptMax = HumOptMaxReceived.toFloat();
-        } else{ // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
+        }
+        else
+        { // Se ponen los valores por defecto si llega "auto" que es la otra posibilidad
             HumOptMax = 18.0;
         }
-    } 
+    }
     preferences.begin("HUMMin", false);
     preferences.putFloat("humMinData", HumOptMin);
     preferences.end();
@@ -1775,28 +1862,34 @@ void handleAjusteHum(){
     server.send(200, "application/json", "{\"mensaje\":\"Ajuste de humedad actualizado\"}");
 }
 
-void handleModeLed(){
+void handleModeLed()
+{
     manualORautoLed = (manualORautoLed + 1) % 2;
     Serial.println("Modo de control de la tira Led: " + String(manualORautoLed));
     server.send(200, "application/json", "{\"manualORautoLed\":\"" + String(manualORautoLed) + "\"}");
 }
 
-void handleModeFan(){
+void handleModeFan()
+{
     manualORautoFan = (manualORautoFan + 1) % 2;
     Serial.println("Modo de control de los ventiladores " + String(manualORautoFan));
     server.send(200, "application/json", "{\"manualORautoFan\":\"" + String(manualORautoFan) + "\"}");
 }
 
-void handleModeHeater(){
+void handleModeHeater()
+{
     manualORautoHeater = (manualORautoHeater + 1) % 2;
     Serial.println("Modo de control del calentador: " + String(manualORautoHeater));
     server.send(200, "application/json", "{\"manualORautoHeater\":\"" + String(manualORautoHeater) + "\"}");
 }
 
-void handlePowerLed(){
-    if (manualORautoLed == 1){
+void handlePowerLed()
+{
+    if (manualORautoLed == 1)
+    {
         String power = extractValues();
-        if (power != ""){
+        if (power != "")
+        {
             powerLed = power.toInt();
             int powerPWD = map(powerLed, 0, 10, 0, 255);
             ledcWrite(LED_CHANNEL, powerPWD);
@@ -1806,10 +1899,13 @@ void handlePowerLed(){
     }
 }
 
-void handlePowerFan(){
-    if (manualORautoFan == 1){
+void handlePowerFan()
+{
+    if (manualORautoFan == 1)
+    {
         String power = extractValues();
-        if (power != ""){
+        if (power != "")
+        {
             powerFan = power.toInt();
             int powerPWD = map(powerFan, 0, 10, 0, 255);
             ledcWrite(FAN_CHANNEL, powerPWD);
@@ -1819,10 +1915,13 @@ void handlePowerFan(){
     }
 }
 
-void handlePowerHeater(){
-    if (manualORautoHeater == 1){
+void handlePowerHeater()
+{
+    if (manualORautoHeater == 1)
+    {
         String power = extractValues();
-        if (power != ""){
+        if (power != "")
+        {
             powerHeater = power.toInt();
             int powerPWD = map(powerHeater, 0, 10, 0, 255);
             ledcWrite(HEATER_CHANNEL, powerPWD);
@@ -1832,29 +1931,26 @@ void handlePowerHeater(){
     }
 }
 
-
-void handleHorasLuz(){
+void handleHorasLuz()
+{
     server.send(200, "application/json", "{\"horasLuz\":" + String(lightHours) + "}");
 }
 
-
-void handleTiempoUltimoSpray(){
-    server.send(200, "application/json", "{\"actualTime\":" + String(getTime()) + 
-                                        ", \"lastSpray\":" + String(lastSpray) +
-                                        ", \"sprayUseInterval\":" + String(pumpUseInterval) + "}");
+void handleTiempoUltimoSpray()
+{
+    server.send(200, "application/json", "{\"actualTime\":" + String(getTime()) + ", \"lastSpray\":" + String(lastSpray) + ", \"sprayUseInterval\":" + String(pumpUseInterval) + "}");
 }
 
-void handleTiempoActBombaAuto(){
-    if (statusPumps[2] == 0){
-        server.send(200, "application/json", "{\"actualTime\":" + String(getTime()) + 
-                                            ", \"counterMezcla\":" + String(counterMezcla) + 
-                                            ", \"pumpUseInterval\":" + String(pumpUseInterval) + "}");
-    } else{
-        server.send(200, "application/json", "{\"actualTime\":" + String(lastChronoOn) + 
-                                            ", \"counterMezcla\":" + String(counterMezcla) + 
-                                            ", \"pumpUseInterval\":" + String(pumpUseInterval) + "}");
+void handleTiempoActBombaAuto()
+{
+    if (statusPumps[2] == 0)
+    {
+        server.send(200, "application/json", "{\"actualTime\":" + String(getTime()) + ", \"counterMezcla\":" + String(counterMezcla) + ", \"pumpUseInterval\":" + String(pumpUseInterval) + "}");
     }
-
+    else
+    {
+        server.send(200, "application/json", "{\"actualTime\":" + String(lastChronoOn) + ", \"counterMezcla\":" + String(counterMezcla) + ", \"pumpUseInterval\":" + String(pumpUseInterval) + "}");
+    }
 }
 
 // SETUP inicial del sistema
@@ -1910,7 +2006,6 @@ void setup()
 
     pinMode(RESISTOR, INPUT);
 
-    Wire.begin(SDA_PIN, SCL_PIN);
     manualORauto = 0;
     manualORautoLed = 0;
     manualORautoFan = 0;
@@ -1921,7 +2016,8 @@ void setup()
     // Inicializamos la conexión WIFI
     WiFi.begin(WIFI_SSID, WIFI_PSWD);
     Serial.print("Conectando a WiFi...");
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED)
+    {
         delay(500);
         Serial.print(".");
     }
@@ -1946,7 +2042,7 @@ void setup()
     server.on("/ajustePumpAutoUse", HTTP_POST, handleAjustePumpAutoUse);
     // Input intervalo de activación del spray en modo automático
     server.on("/ajusteSprayUse", HTTP_POST, handleAjusteSprayUse);
-    // Inputs de valores y rangos optimos de los sensores 
+    // Inputs de valores y rangos optimos de los sensores
     server.on("/ajusteLum", HTTP_POST, handleAjusteLum);
     server.on("/ajusteLumHours", HTTP_POST, handleAjusteLumHours);
     server.on("/ajustePh", HTTP_POST, handleAjustePh);
@@ -1963,14 +2059,16 @@ void setup()
     server.on("/horasLuz", HTTP_GET, handleHorasLuz);
     server.on("/tiempoActBombaAuto", HTTP_GET, handleTiempoActBombaAuto);
     server.on("/tiempoUltimoSpray", HTTP_GET, handleTiempoUltimoSpray);
-       
+
     // Inicializamos el servidor
     server.begin();
     Serial.println("Servidor web inicializado");
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
     // Iniciamos el control del sensor de temperatura y humedad
     dht.begin();
-    tsl.begin();
+
+    Wire.begin(SDA_PIN, SCL_PIN);
+    tsl.begin(&Wire);
     tsl.enableAutoRange(true);                             // Habilita el rango automatico
     tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS); // Configura el tiempo de integracion
 
@@ -2047,47 +2145,54 @@ void setup()
 }
 
 //----------------
-//LOOP del sistema
+// LOOP del sistema
 // ---------------
 
-
-bool areAllFloats(float arr[], int size) {
-    for (int i = 0; i < size; i++) {
-        if (isnan(arr[i]) || isinf(arr[i])) {  // Si el valor es NaN o infinito
-            return false;  // No es un float válido
+bool areAllFloats(float arr[], int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        if (isnan(arr[i]) || isinf(arr[i]))
+        {                 // Si el valor es NaN o infinito
+            return false; // No es un float válido
         }
     }
-    return true;  // Todos los elementos son floats válidos
+    return true; // Todos los elementos son floats válidos
 }
-
 
 void loop()
 {
-    server.handleClient();  
+    server.handleClient();
 
     // Lectura de los niveles de agua en el sistema
-    leerSensorMinPlan();            // dataSensorsInfo[5]   |
-    leerSensorMaxPlan();            // dataSensorsInfo[10]  |
-    leerSensorMinMez();             // dataSensorsInfo[7]   |-- Water lvl
-    leerSensorMaxMez();             // dataSensorsInfo[8]   |
-    leerSensorRes();                // dataSensorsInfo[9]   |
+    leerSensorMinPlan(); // dataSensorsInfo[5]   |
+    leerSensorMaxPlan(); // dataSensorsInfo[10]  |
+    leerSensorMinMez();  // dataSensorsInfo[7]   |-- Water lvl
+    leerSensorMaxMez();  // dataSensorsInfo[8]   |
+    leerSensorRes();     // dataSensorsInfo[9]   |
     // Lecturas de luz
-    lightResistorReading();         // dataSensorsInfo[4] (LIGHT RESISTOR)
-    lightSensorReading();           // dataSensorsInfo[6] (LIGHT)
+    lightResistorReading(); // dataSensorsInfo[4] (LIGHT RESISTOR)
+    lightSensorReading();   // dataSensorsInfo[6] (LIGHT)
     // Lecturas de temperatura
-    tempReading();                  // dataSensorsInfo[2] (TEMP)
+    tempReading(); // dataSensorsInfo[2] (TEMP)
     // Lecturas de humedad
-    humidityReading();              // dataSensorsInfo[3] (HUM)
+    humidityReading(); // dataSensorsInfo[3] (HUM)
     // Lecturas de ph y waterQuality junto con el control de bombas
-    controlLiquidos();              // dataSensorsInfo[0] (PH) y dataSensorsInfo[1] (TDS)
+    controlLiquidos(); // dataSensorsInfo[0] (PH) y dataSensorsInfo[1] (TDS)
 
-    sendData();
+    // Enviar datos cada 10 segundos
+    unsigned long currentTime = millis();
+    if (currentTime - lastSendTime >= 10000)
+    {
+        sendData();
+        lastSendTime = currentTime;
+    }
 
     // Lectura y evaluación de los sistemas de lógica difusa
     checkTEMP();
     checkHUM();
     checkLUM();
     ifDayChanged();
-    
-    delay(5000);
+
+    delay(1000);
 }

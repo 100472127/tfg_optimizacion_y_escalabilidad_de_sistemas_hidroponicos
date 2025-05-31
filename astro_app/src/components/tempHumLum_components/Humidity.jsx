@@ -15,13 +15,22 @@ export default function Humidity() {
             const currentData = useDataStore.getState().data;
             if (currentData != null){
                 setHumidityRead(parseFloat(currentData?.humidityRead));
-                setHumOptMin(currentData?.HumOptMin);
-                setHumOptMax(currentData?.HumOptMax); 
             }
-
         }, 1000);
 
-        return () => clearInterval(interval);
+        const getInitialValues = setInterval(() => {
+            const currentData = useDataStore.getState().data;
+            if (currentData !== null){
+                setHumOptMin(currentData?.HumOptMin);
+                setHumOptMax(currentData?.HumOptMax);
+                clearInterval(getInitialValues); // Limpiamos el intervalo una vez obtenidos los valores iniciales
+            }
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(getInitialValues);
+        }
     }, []);
 
     // Función para manejar el click de los botones de min y max
@@ -61,6 +70,8 @@ export default function Humidity() {
             axios.post(urlPost, { value: range })
             .then(response => {
                 console.log(`Rango enviado ${range}:`);
+                setHumOptMin(parseFloat(humMin).toFixed(1));
+                setHumOptMax(parseFloat(humMax).toFixed(1));
             })
             .catch(error => {
                 console.error(`Error al enviar el rango ${range}:`, error);

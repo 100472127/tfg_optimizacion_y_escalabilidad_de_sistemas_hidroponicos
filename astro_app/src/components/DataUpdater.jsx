@@ -31,7 +31,7 @@ export default function DataUpdater({ id }) {
 
         fetchData(); // Llama a la función inmediatamente para obtener datos al cargar el componente
 
-        // Cada 5 segundos traemos nuevos datos del servidor para el controlador actual
+        // Cada 10 segundos traemos nuevos datos del servidor para el controlador actual
         const interval = setInterval(fetchData, 10000);
 
         return () => clearInterval(interval);

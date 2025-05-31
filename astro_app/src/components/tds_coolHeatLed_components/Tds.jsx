@@ -7,17 +7,22 @@ export default function Tds() {
     const [waterQualityRead, setWaterQualityRead] = useState(null);
     const [TDSOptMin, setTDSOptMin] = useState(null);
     const [TDSOptMax, setTDSOptMax] = useState(null);
-    const [pHOptMin, setPHOptMin] = useState(null);
-    const [pHOptMax, setPHOptMax] = useState(null);
     useEffect(() => {
         const interval = setInterval(() => {
             const currentData = useDataStore.getState().data;
             if (currentData !== null){
                 setWaterQualityRead(currentData?.waterQualityRead);
+            }
+        }, 1000);
+
+        const getInitialValues = setInterval(() => {
+            const currentData = useDataStore.getState().data;
+            if (currentData !== null){
                 setTDSOptMin(currentData?.TDSOptMin);
-                setTDSOptMax(currentData?.TDSOptMax); 
-                setPHOptMin(currentData?.pHOptMin);
-                setPHOptMax(currentData?.pHOptMax);  
+                useDataStore.getState().setTDSOptMin(currentData?.TDSOptMin);
+                setTDSOptMax(currentData?.TDSOptMax);
+                useDataStore.getState().setTDSOptMax(currentData?.TDSOptMax);
+                clearInterval(getInitialValues); // Limpiamos el intervalo una vez obtenidos los valores iniciales
             }
         }, 1000);
 
@@ -57,12 +62,18 @@ export default function Tds() {
         
         // El controlador necesita el rango de pH y TDS para ajustar la lógica difusa, por lo que enviaremos
         // el rango de tds nuevo y el rango de pH que estaba guardado previamente para modificar solo el tds
-        if (useDataStore.getState().actualController != null){
+        if (useDataStore.getState().actualController != null && useDataStore.getState().pHOptMax !== null && useDataStore.getState().pHOptMin !== null) {
+            const pHOptMin = useDataStore.getState().pHOptMin;
+            const pHOptMax = useDataStore.getState().pHOptMax;
             const urlPost = useDataStore.getState().url + "/ajustePh/" + useDataStore.getState().actualController;
             const ranges = pHOptMin + "-" + pHOptMax + ";" + tdsMin + "-" + tdsMax;
             axios.post(urlPost, { value: ranges })
             .then(response => {
                 console.log(`Rango enviado ${ranges}:`);
+                setTDSOptMin(tdsMin);
+                useDataStore.getState().setTDSOptMin(tdsMin);
+                setTDSOptMax(tdsMax);
+                useDataStore.getState().setTDSOptMax(tdsMax);
             })
             .catch(error => {
                 console.error(`Error al enviar el rango ${ranges}:`, error);
@@ -87,13 +98,13 @@ export default function Tds() {
                                 onClick={() => handleButtonClick()}
                                 className="w-15 h-9 bg-theme-cream rounded-lg shadow-sm shadow-gray-800 flex items-center justify-center hover:bg-theme-dark-green transition"
                             >
-                                {TDSOptMin !== null ? TDSOptMin : "min"}
+                                {TDSOptMin != null ? TDSOptMin : "min"}
                             </button>
                             <button
                             onClick={() => handleButtonClick()}
                             className="w-15 h-9 bg-theme-cream rounded-lg shadow-sm shadow-gray-800 flex items-center justify-center hover:bg-theme-dark-green transition"
                             >
-                                {TDSOptMax !== null ? TDSOptMax : "max"}
+                                {TDSOptMax != null ? TDSOptMax : "max"}
                             </button>
                         </div>
                     </div>

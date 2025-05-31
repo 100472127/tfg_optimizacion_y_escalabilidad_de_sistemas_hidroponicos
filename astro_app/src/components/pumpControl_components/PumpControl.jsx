@@ -9,13 +9,12 @@ export default function PumpControl() {
     const [statusBombaNutrientes, setStatusBombaNutrientes] = useState(false);
     const [statusBombaMezclaResiduos, setStatusBombaMezclaResiduos] = useState(false);
     const [statusBombaResiduos, setStatusBombaResiduos] = useState(false);
-    const [manualORauto, setManualORauto] = useState(0); // 0 para automático, 1 para manual
 
     useEffect(() => {
         // Intervalo para obtener el estaado de las bombas por primera vez
-        const dataInterval = setInterval(() => {
+        const statusPumpInterval = setInterval(() => {
             const currentData = useDataStore.getState().data; 
-            if(currentData !== null){
+            if(currentData !== null) {
                 // Si las bombas están activas establecemos el estado a true, si están inactivas a false
                 setStatusBombaAcida(currentData?.statusBombaAcida == 1.0);
                 setStatusBombaAlcalina(currentData?.statusBombaAlcalina == 1.0);
@@ -23,37 +22,40 @@ export default function PumpControl() {
                 setStatusBombaNutrientes(currentData?.statusBombaNutrientes == 1.0);
                 setStatusBombaMezclaResiduos(currentData?.statusBombaMezclaResiduos == 1.0);
                 setStatusBombaResiduos(currentData?.statusBombaResiduos == 1.0);
-                clearInterval(dataInterval);
-            }
-        }, 1000);
-
-        // Intervalo para obtener el estado de manualORauto cada segundo para poder controlar las bombas si cambia el estado de manualORauto
-        const manualORautoInterval = setInterval(() => {
-            const data = useDataStore.getState().data;
-            if (data && data.manualORauto !== undefined) {
-                setManualORauto(data.manualORauto);
-                console.log("Estado de manualORauto en pumpControl:", data.manualORauto);
+                clearInterval(statusPumpInterval); // Limpiar el intervalo después de obtener los datos
             }
         }, 1000);
 
         // Limpiar el intervalo cuando el componente se desmonte
         return () => {
-            clearInterval(dataInterval);
-            clearInterval(manualORautoInterval);
+            clearInterval(statusPumpInterval);
         };
     }, []);
 
     // Función para manejar el cambio de estado de los checkboxes y enviar la información al controlador
     const handleToggle = (setter, prevStatus, pump) => {
         if (useDataStore.getState().actualController != null) { 
-            if (manualORauto === 1) {
-                setter((prev) => !prev);
+            if (useDataStore.getState().manualORauto == 1) {
                 const urlPost = useDataStore.getState().url + "/" + pump + "/" + useDataStore.getState().actualController;
                 const newStatus = prevStatus ? 0.0 : 1.0; // Convertir el estado booleano a 1.0 o 0.0
 
                 axios.post(urlPost, { value: newStatus })
                 .then(response => {
+                    setter((prev) => !prev);
                     console.log(`${pump} actualizada a ${newStatus}:`);
+                    if(pump === "bombaAcida") {
+                        setStatusBombaAcida(newStatus === 1.0);
+                    } else if(pump === "bombaAlcalina") {
+                        setStatusBombaAlcalina(newStatus === 1.0);
+                    } else if(pump === "bombaMezcla") {
+                        setStatusBombaMezcla(newStatus === 1.0);
+                    } else if(pump === "bombaNutrientes") {
+                        setStatusBombaNutrientes(newStatus === 1.0);
+                    } else if(pump === "bombaMezclaResiduos") {
+                        setStatusBombaMezclaResiduos(newStatus === 1.0);
+                    } else if(pump === "bombaResiduos") {
+                        setStatusBombaResiduos(newStatus === 1.0);
+                    }
                 })
                 .catch(error => {
                     console.error(`Error al actualizar ${pump}:`, error);
