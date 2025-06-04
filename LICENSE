@@ -1,21 +1,17 @@
-MIT License
+Academic Non-Comercial License
 
-Copyright (c) 2025 Diego Montero 
+Copyright (c) 2025 Diego Montero Solano 
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Este software ha sido desarrollado en el contexto de un Trabajo de Fin de grado en el Grado de Ingeniería Informática, en la Universidad Carlos III de Madrid.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Permiso para usar, copiar, modificar y distribuir este software y su documentación asociada se concede gratuitamente, siempre que se cumplan las siguientes condiciones:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+1. El uso del software está limitado exclusivamente a fines académicos, educativos, personales o de investigación.
+2. Se prohíbe expresamente cualquier uso comercial del software, incluyendo pero no limitado a:
+    - La venta, redistribución con fines lucrativos o integración en productos comerciales.
+    - El uso del software en entornos empresariales o comerciales.
+3. No se otorgan derechos para sublicenciar o distribuir este software con fines distintos a los anteriormente permitidos sin autorización expresa del autor.
+4. Este software se proporciona "tal cual", sin garantías de ningún tipo, explícitas o implícitas, incluyendo, pero no limitándose a, garantías de comerciabilidad, idoneidad para un propósito particular o no infracción.
+5. En ningún caso el autor será responsable por daños derivados del uso de este software.
+
+Para consultas relacionadas con otros usos o licencias extendidas, por favor contacta con: 100472127@alumnos.uc3m.es
