@@ -38,11 +38,12 @@ export default function PumpControl() {
             if (useDataStore.getState().manualORauto == 1) {
                 const urlPost = useDataStore.getState().url + "/" + pump + "/" + useDataStore.getState().actualController;
                 const newStatus = prevStatus ? 0.0 : 1.0; // Convertir el estado booleano a 1.0 o 0.0
+                console.log(`Cambiando estado de ${pump} a ${newStatus}`);
 
                 axios.post(urlPost, { value: newStatus })
                 .then(response => {
                     setter((prev) => !prev);
-                    console.log(`${pump} actualizada a ${newStatus}:`);
+                    console.log(`${pump} actualizada a ${newStatus}`);
                     if(pump === "bombaAcida") {
                         setStatusBombaAcida(newStatus === 1.0);
                     } else if(pump === "bombaAlcalina") {

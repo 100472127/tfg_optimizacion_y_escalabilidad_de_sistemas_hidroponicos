@@ -13,7 +13,7 @@ const app = express();
 // Permitimos peticiones desde la URL donde se alojará la página web hecha con astro
 const allowedOrigins = [
     'http://localhost:4321', // URL de desarrollo
-    'http://192.168.73.200:4321', // URL de producción
+    'http://192.168.73.200:4321', // URL de producción (Raspberry Pi)
 ];
 app.use(cors({
     origin: function (origin, callback) {
@@ -266,6 +266,7 @@ app.post('/ajusteSprayUse/:id', async (req, res) => {
     const controllerID = req.params.id;  // Obtener el ID del controlador desde la URL
     const dataToSend = req.body;         // Obtener los datos del cuerpo de la petición
     const result = await sendPetition("POST", controllerID, dataToSend, "/ajusteSprayUse");  // Esperar el resultado de sendPost
+    console.log("ajusteSprayUse", result);
     res.status(result === "ERROR" ? 500 : 200).send(result);
 });
 

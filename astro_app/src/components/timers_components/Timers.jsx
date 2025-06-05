@@ -32,7 +32,7 @@ export default function Timers(){
                     var actualTime = sprayJsonData.actualTime;
                     var lastSpray = sprayJsonData.lastSpray;
                     var sprayUseInterval = sprayJsonData.sprayUseInterval;
-                    var activationTime = (lastSpray.toFloat() + sprayUseInterval.toFloat()) - actualTime.toFloat();
+                    var activationTime = (parseFloat(lastSpray) + parseFloat(sprayUseInterval)) - parseFloat(actualTime);
                     if (activationTime < 0) {
                         setSprayTimer("0h 0' 0''");
                     } else{
@@ -56,7 +56,7 @@ export default function Timers(){
                     var actualTime = pumpJsonData.actualTime;
                     var counterMezcla = pumpJsonData.counterMezcla;
                     var pumpUseInterval = pumpJsonData.pumpUseInterval;
-                    var activationTime = (counterMezcla.toFloat() + pumpUseInterval.toFloat()) - actualTime.toFloat();
+                    var activationTime = (parseFloat(counterMezcla) + parseFloat(pumpUseInterval)) - parseFloat(actualTime);
                     if (activationTime < 0) {
                         setPumpTimer("0h 0' 0''");
                     } else{
@@ -87,7 +87,7 @@ export default function Timers(){
             const urlPost = useDataStore.getState().url + `/selectControlMode/${id}`;
             axios.post(urlPost, { value: newManualORauto })
             .then(response => {
-                console.log(`Modo bomba enviado ${newManualORauto}:`);
+                console.log("Modo bomba enviado: ", newManualORauto);
                 setManualORauto(newManualORauto); // Actualiza el estado local
                 useDataStore.getState().setManualORauto(newManualORauto);
             })
@@ -133,6 +133,7 @@ export default function Timers(){
                 axios.post(urlPost, { value: seconds })
                 .then(response => {
                     console.log(`Pump timer establecido: ${seconds}`);
+                    console.log("URL: ", urlPost);
                 })
                 .catch(error => {
                     console.error(`Error al establecer el pump timer`, error);
@@ -159,6 +160,8 @@ export default function Timers(){
             axios.post(urlPost, { value: seconds })
             .then(response => {
                 console.log(`Spray timer establecido: ${seconds}`);
+                console.log("URL: ", urlPost);
+
             })
             .catch(error => {
                 console.error(`Error al establecer el spray timer`, error);

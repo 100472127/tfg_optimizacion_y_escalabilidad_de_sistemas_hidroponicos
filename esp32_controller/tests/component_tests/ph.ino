@@ -13,7 +13,7 @@ void loop() {
     float voltage = rawValue * (3.3 / 4095.0);
 
     // Conversión aproximada de voltaje a pH
-    float phValue = 7 + ((2.5 - voltage) / 0.18); 
+    float phValue = 7 - ((0.6 - voltage) / 0.18); 
 
     Serial.print("Lectura ADC: ");
     Serial.print(rawValue);

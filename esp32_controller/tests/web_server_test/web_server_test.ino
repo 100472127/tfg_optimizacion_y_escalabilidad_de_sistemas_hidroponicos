@@ -114,12 +114,12 @@ void setup()
     server.on("/ajusteTemp", HTTP_POST, handlePetition);
     server.on("/ajusteHum", HTTP_POST, handlePetition);
     // Inputs de activación de los actuadores (led, ventilador y calentador)
-    server.on("/modeLed", HTTP_POST, handleModeLed);
-    server.on("/modeFan", HTTP_POST, handleModeFan);
-    server.on("/modeHeater", HTTP_POST, handleModeHeater);
-    server.on("/powerLed", HTTP_POST, handlePowerLed);
-    server.on("/powerFan", HTTP_POST, handlePowerFan);
-    server.on("/powerHeater", HTTP_POST, handlePowerHeater);
+    server.on("/modeLed", HTTP_POST, handlePetition);
+    server.on("/modeFan", HTTP_POST, handlePetition);
+    server.on("/modeHeater", HTTP_POST, handlePetition);
+    server.on("/powerLed", HTTP_POST, handlePetition);
+    server.on("/powerFan", HTTP_POST, handlePetition);
+    server.on("/powerHeater", HTTP_POST, handlePetition);
     // Peticiones para actualización en tiempo real
     server.on("/horasLuz", HTTP_GET, handlePetition);
     server.on("/tiempoActBombaAuto", HTTP_GET, handlePetition);

@@ -44,10 +44,9 @@
 #define SCL_PIN 22
 
 // Canales para la configuración del PWM de los actuadores
-// 0 Para el PWM del servomotor
+#define LED_CHANNEL 0
 #define FAN_CHANNEL 1
 #define HEATER_CHANNEL 2
-#define LED_CHANNEL 3
 
 // Variable para guardar la IP que se le asignará al microcontrolador al conectarse a la red wifi
 String ip_value;
@@ -487,6 +486,45 @@ void readingPHTDS()
 // FUNCIONES CONTROL DE LA HUMEDAD
 // -------------------------------
 
+// checkDegreesSpray(): evita movimientos mayores a un rango de grados del servomotor
+void checkDegreesSpray(int lastPos, int degrees)
+{
+    if (degrees != 0 && degrees != 45)
+    {
+        if (degrees < 0 || degrees > 45)
+        {
+            sprayServo.write(lastPos);
+            if (abs(45 - degrees) < abs(0 - degrees))
+            {
+                sprayServo.write(45);
+                lastPos = 45;
+            }
+            else if (abs(45 - degrees) > abs(0 - degrees))
+            {
+                sprayServo.write(0);
+                lastPos = 0;
+            }
+        }
+        else
+        {
+            if (lastPos == 45)
+            {
+                sprayServo.write(0);
+                lastPos = 0;
+            }
+            else if (lastPos == 0)
+            {
+                sprayServo.write(45);
+                lastPos = 45;
+            }
+        }
+    }
+    else
+    {
+        sprayServo.write(degrees);
+        lastPos = degrees;
+    }
+}
 
 // checkSprayUse():funcion de ejecuccion del spray
 void checkSprayUse(float humidityActuatorsOutput)
@@ -502,9 +540,9 @@ void checkSprayUse(float humidityActuatorsOutput)
         {
             // Activar spray 1 vez
             digitalWrite(BOMBAMEZCLA, 0);
-            sprayServo.write(45);
+            checkDegreesSpray(lastPos, 45);
             delay(1500);
-            sprayServo.write(0);
+            checkDegreesSpray(lastPos, 0);
             delay(1500);
         }
         else if (humidityActuatorsOutput >= 1.5 && humidityActuatorsOutput <= 2.5)
@@ -513,9 +551,9 @@ void checkSprayUse(float humidityActuatorsOutput)
             for (int i = 0; i < 2; i++)
             {
                 digitalWrite(BOMBAMEZCLA, 0);
-                sprayServo.write(45);
+                checkDegreesSpray(lastPos, 45);
                 delay(1500);
-                sprayServo.write(0);
+                checkDegreesSpray(lastPos, 0);
                 delay(1500);
             }
         }
@@ -866,7 +904,7 @@ void adjustLED(float lightfuzzyOutput)
     // Guardar el valor del PWM transformado en un número del 0 al 10 para la interfaz
     powerLed = map(currentPWMValue, 0, 255, 0, 10);
     // Ajustar el PWM del LED
-    ledcWrite(LED_CHANNEL, currentPWMValue);
+    ledcWrite(0, currentPWMValue);
 }
 
 void checkLUM()
@@ -1188,9 +1226,8 @@ void controlLiquidos()
             statusPumps[0] = 1;
             statusPumps[1] = 1;
             statusPumps[3] = 1;
-            // Se llena el agua del tanque de mezcla hasta que esté al mínimo o pasen 10 segundos
-            while (millis() - time < 10000 || dataSensorsInfo[7] == 0)
-            { 
+            while (dataSensorsInfo[7] == 0)
+            { // Mientras no haya agua en el sensor minimo de mezcla
                 leerSensorMinMez();
             }
             digitalWrite(BOMBANUTRIENTES, 0);
@@ -1318,7 +1355,7 @@ void controlLiquidos()
                 digitalWrite(BOMBAMEZCLA, 1);
                 statusPumps[2] = 1;
                 time = millis();
-                while ((millis() - time < 10000) && (dataSensorsInfo[5] == 0) && (dataSensorsInfo[10] == 0) && (dataSensorsInfo[7] == 1))
+                while ((millis() - time < 20000) && (dataSensorsInfo[5] == 0) && (dataSensorsInfo[10] == 0) && (dataSensorsInfo[7] == 1))
                 {
                 }
                 digitalWrite(BOMBAMEZCLA, 0);
@@ -1332,7 +1369,7 @@ void controlLiquidos()
                     digitalWrite(BOMBAMEZCLA, 1);
                     statusPumps[2] = 1;
                     time = millis();
-                    while ((millis() - time < 10000) && (dataSensorsInfo[10] == 0) && (dataSensorsInfo[7] == 1))
+                    while ((millis() - time < 20000) && (dataSensorsInfo[10] == 0) && (dataSensorsInfo[7] == 1))
                     {
                     }
                     digitalWrite(BOMBAMEZCLA, 0);
@@ -1511,7 +1548,7 @@ void handleBombaAlcalina()
     if (manualORauto == 1)
     {
         statusPumps[1] = extractValues().toInt();
-        digitalWrite(BOMBAALCALINA, statusPumps[1]);
+        digitalWrite(BOMBAACIDA, statusPumps[1]);
         Serial.println("Valor de la bomba alcalina: " + String(statusPumps[1]));
         server.send(200, "application/json", "{\"mensaje\":\"Status bomba alcalina actualizada\"}");
     }
@@ -1527,7 +1564,7 @@ void handleBombaMezcla()
     if (manualORauto == 1)
     {
         statusPumps[2] = extractValues().toInt();
-        digitalWrite(BOMBAMEZCLA, statusPumps[2]);
+        digitalWrite(BOMBAACIDA, statusPumps[2]);
         Serial.println("Valor de la bomba mezcla: " + String(statusPumps[2]));
         server.send(200, "application/json", "{\"mensaje\":\"Status bomba mezcla actualizada\"}");
     }
@@ -1559,7 +1596,7 @@ void handleBombaMezclaResiduos()
     if (manualORauto == 1)
     {
         statusPumps[4] = extractValues().toInt();
-        digitalWrite(BOMBAMEZCLARES, statusPumps[4]);
+        digitalWrite(BOMBAACIDA, statusPumps[4]);
         Serial.println("Valor de la bomba mezclaResiduos: " + String(statusPumps[4]));
         server.send(200, "application/json", "{\"mensaje\":\"Status bomba mezclaResiduos actualizada\"}");
     }
@@ -1575,7 +1612,7 @@ void handleBombaResiduos()
     if (manualORauto == 1)
     {
         statusPumps[5] = extractValues().toInt();
-        digitalWrite(BOMBARES, statusPumps[5]);
+        digitalWrite(BOMBAACIDA, statusPumps[5]);
         Serial.println("Valor de la bomba residuos: " + String(statusPumps[5]));
         server.send(200, "application/json", "{\"mensaje\":\"Status bomba residuos actualizada\"}");
     }
@@ -1607,8 +1644,7 @@ void handleSelectControlMode()
 // Recibe el tiempo en segundos para el intervalo de activación de la bomba con el formato {value: "valor"}
 void handleAjustePumpAutoUse()
 {
-    pumpUseInterval = extractValues().toFloat(); 
-    counterMezcla = getTime();
+    pumpUseInterval = extractValues().toFloat();
     preferences.begin("PumpInterval", false);
     preferences.putFloat("pumpUseIntervalRange", pumpUseInterval);
     preferences.end();
@@ -1620,16 +1656,16 @@ void handleAjustePumpAutoUse()
 void handleAjusteSprayUse()
 {
     sprayUseInterval = extractValues().toInt();
-    lastSpray = getTime();
     preferences.begin("SprayInterval", false);
     preferences.putFloat("sprayUseIntervalRange", sprayUseInterval);
     preferences.end();
     digitalWrite(BOMBAMEZCLA, 0);
-    sprayServo.write(45);
+    checkDegreesSpray(lastPos, 45);
     delay(1000);
-    sprayServo.write(0);
+    checkDegreesSpray(lastPos, 0);
     delay(1000);
     digitalWrite(BOMBAMEZCLA, statusPumps[2]);
+    lastSpray = getTime();
     Serial.println("Intervalo de activación del spray: " + String(sprayUseInterval));
     server.send(200, "application/json", "{\"mensaje\":\"Ajuste de intervalo de activación del spray actualizado\"}");
 }
@@ -1928,7 +1964,7 @@ void handleHorasLuz()
 
 void handleTiempoUltimoSpray()
 {
-    server.send(200, "application/json", "{\"actualTime\":" + String(getTime()) + ", \"lastSpray\":" + String(lastSpray) + ", \"sprayUseInterval\":" + String(sprayUseInterval) + "}");
+    server.send(200, "application/json", "{\"actualTime\":" + String(getTime()) + ", \"lastSpray\":" + String(lastSpray) + ", \"sprayUseInterval\":" + String(pumpUseInterval) + "}");
 }
 
 void handleTiempoActBombaAuto()
@@ -1936,7 +1972,6 @@ void handleTiempoActBombaAuto()
     if (statusPumps[2] == 0)
     {
         server.send(200, "application/json", "{\"actualTime\":" + String(getTime()) + ", \"counterMezcla\":" + String(counterMezcla) + ", \"pumpUseInterval\":" + String(pumpUseInterval) + "}");
-        lastChronoOn = getTime();
     }
     else
     {
@@ -1951,6 +1986,8 @@ void setup()
 
     // Conectamos el servo al PIN y ajustamos su posicion inicial a 0 y ultima a 45
     sprayServo.attach(SPRAY);
+    lastPos = 45;
+    checkDegreesSpray(lastPos, 0);
 
     // Establecemos los PINS que correspondan
     pinMode(WATERQUALITYSENSORPIN, INPUT_PULLDOWN);
@@ -1976,16 +2013,6 @@ void setup()
     pinMode(BOMBARES, OUTPUT);
     digitalWrite(BOMBARES, 0);
 
-    // Conectamos el LED a su PIN y lo apagamos
-    pinMode(LED, OUTPUT);
-    ledcSetup(LED_CHANNEL, 5000, 8);
-    ledcAttachPin(LED, LED_CHANNEL);
-    ledcWrite(LED_CHANNEL, 0); // OFF
-
-    delay(5000);
-    sprayServo.write(0);
-
-
     // Conectamos el calentador y el ventilador a sus PINES correspondientes y los apagamos
     pinMode(FAN, OUTPUT);
     ledcSetup(FAN_CHANNEL, 1000, 8);
@@ -1996,6 +2023,12 @@ void setup()
     ledcSetup(HEATER_CHANNEL, 500, 8);
     ledcAttachPin(HEATER, HEATER_CHANNEL);
     ledcWrite(HEATER_CHANNEL, 0); // OFF
+
+    // Conectamos el LED a su PIN y lo apagamos
+    pinMode(LED, OUTPUT);
+    ledcSetup(LED_CHANNEL, 5000, 8);
+    ledcAttachPin(LED, LED_CHANNEL);
+    ledcWrite(LED_CHANNEL, 0); // OFF
 
     pinMode(RESISTOR, INPUT);
 
@@ -2021,7 +2054,7 @@ void setup()
     server.on("/bombaMezcla", HTTP_POST, handleBombaMezcla);
     server.on("/bombaNutrientes", HTTP_POST, handleBombaNutrientes);
     server.on("/bombaMezclaResiduos", HTTP_POST, handleBombaMezclaResiduos);
-    server.on("/bombaResiduos", HTTP_POST, handleBombaResiduos);
+    server.on("/bombaResiduos", HTTP_POST, handleBombaMezclaResiduos);
     // Botón activar spray manualmente
     server.on("/spray", HTTP_POST, handleSpray);
     // Botón para poner el control de las bombas en manual o automático
@@ -2161,9 +2194,9 @@ void loop()
     // Lecturas de ph y waterQuality junto con el control de bombas
     controlLiquidos(); // dataSensorsInfo[0] (PH) y dataSensorsInfo[1] (TDS)
 
-    // Enviar datos cada 5 segundos
+    // Enviar datos cada 10 segundos
     unsigned long currentTime = millis();
-    if (currentTime - lastDataSendTime >= 5000)
+    if (currentTime - lastDataSendTime >= 3000)
     {
         sendData();
         lastDataSendTime = currentTime;
