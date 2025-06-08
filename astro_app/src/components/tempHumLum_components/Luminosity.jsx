@@ -107,9 +107,9 @@ export default function Luminosity() {
     }
 
     const getLightMarkerPosition = () => {
-        if (lightSensorRead >= LumOptMin) return '100%';
-        if (LumOptMin === 0) return '0%';
-        const percentage = (lightSensorRead / LumOptMin) * 100;
+        if (parseFloat(lightSensorRead) >= parseFloat(LumOptMax)) return '100%';
+        if (parseFloat(lightSensorRead) <= parseFloat(LumOptMin)) return '0%';
+        const percentage = ((lightSensorRead - LumOptMin) / (LumOptMax - LumOptMin)) * 100;
         return `${percentage}%`;
       };
 
@@ -124,7 +124,7 @@ export default function Luminosity() {
                         </p>
                         <div className="h-6 w-3/4 relative bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-lg">
                             <div
-                                className="absolute top-0 z-100 h-full rounded-lg w-1 bg-blue-700 ${barPositioning}"
+                                className="absolute top-0 z-100 h-full rounded-lg w-1 bg-blue-700"
                                 style={{
                                     left: getLightMarkerPosition(),
                                     transform: 'translateX(-50%)',

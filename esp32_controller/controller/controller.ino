@@ -16,8 +16,8 @@
 #define CONTROLLER_ID "1"
 
 // Configuración de conexión WiFi
-#define WIFI_SSID "DIGIFIBRA-ysTb"
-#define WIFI_PSWD "SdGtdHy7XD"
+#define WIFI_SSID ""
+#define WIFI_PSWD ""
 
 // PINS
 #define WATERLVLSENSORPIN 27
@@ -100,6 +100,7 @@ int powerFan = 0;
 int powerHeater = 0;
 unsigned long lastChronoOn = 0;
 unsigned long lastDataSendTime = 0;
+unsigned long lastLiquidControlTime = 0;
 
 // Guardado en flash de variables
 Preferences preferences;
@@ -134,17 +135,21 @@ unsigned long getTime()
     int retries = 0;
     const int maxRetries = 10;
 
-    while (!getLocalTime(&timeinfo) && retries < maxRetries) {
+    while (!getLocalTime(&timeinfo) && retries < maxRetries)
+    {
         Serial.println("Esperando sincronización con NTP...");
         delay(1000);
         retries++;
     }
 
-    if (retries == maxRetries) {
+    if (retries == maxRetries)
+    {
         Serial.println("Fallo al obtener hora.");
         return 0;
-    } else {
-        return mktime(&timeinfo);    
+    }
+    else
+    {
+        return mktime(&timeinfo);
     }
 }
 
@@ -176,6 +181,10 @@ void checkPHTDS()
         int newStatusAlcalina = outputAlcalina > 0.5 ? 1 : 0;
         int newStatusAcida = outputAcida > 0.5 ? 1 : 0;
         int newStatusNutrientes = outputNutrientes > 0.5 ? 1 : 0;
+        Serial.println("Output logica difusa: Alcalina " + String(outputAlcalina) +
+                       ", Acida " + String(outputAcida) +
+                       ", Nutrientes " + String(outputNutrientes));
+
         // Comprobar y actualizar el estado de la bomba alcalina
         if (statusPumps[1] != newStatusAlcalina && statusPumps[2] == 0)
         {
@@ -473,7 +482,7 @@ void setFuzzyPHTDS()
 void readingPHTDS()
 {
     // Leer pH
-    phRead = 7 - ((OffsetPH - (analogRead(PHSENSORPIN) * (3.3 / 4095.0)) ) / 0.18);
+    phRead = 7 - ((OffsetPH - (analogRead(PHSENSORPIN) * (3.3 / 4095.0))) / 0.18);
     dataSensorsInfo[0] = phRead;
 
     // Leer calidad del agua (TDS)
@@ -487,6 +496,28 @@ void readingPHTDS()
 // FUNCIONES CONTROL DE LA HUMEDAD
 // -------------------------------
 
+void spray()
+{
+    // Paramos las bombas para no afectar al servomotor
+    digitalWrite(BOMBAMEZCLA, 0);
+    digitalWrite(BOMBAACIDA, 0);
+    digitalWrite(BOMBAALCALINA, 0);
+    digitalWrite(BOMBANUTRIENTES, 0);
+    digitalWrite(BOMBARES, 0);
+    digitalWrite(BOMBAMEZCLARES, 0);
+    // Activamos el spray
+    sprayServo.write(45);
+    delay(1500);
+    sprayServo.write(0);
+    delay(1500);
+    // Restauramos el estado de las bombas
+    digitalWrite(BOMBAACIDA, statusPumps[0]);
+    digitalWrite(BOMBAALCALINA, statusPumps[1]);
+    digitalWrite(BOMBAMEZCLA, statusPumps[2]);
+    digitalWrite(BOMBANUTRIENTES, statusPumps[3]);
+    digitalWrite(BOMBAMEZCLARES, statusPumps[4]);
+    digitalWrite(BOMBARES, statusPumps[5]);
+}
 
 // checkSprayUse():funcion de ejecuccion del spray
 void checkSprayUse(float humidityActuatorsOutput)
@@ -502,10 +533,7 @@ void checkSprayUse(float humidityActuatorsOutput)
         {
             // Activar spray 1 vez
             digitalWrite(BOMBAMEZCLA, 0);
-            sprayServo.write(45);
-            delay(1500);
-            sprayServo.write(0);
-            delay(1500);
+            spray();
         }
         else if (humidityActuatorsOutput >= 1.5 && humidityActuatorsOutput <= 2.5)
         {
@@ -513,10 +541,7 @@ void checkSprayUse(float humidityActuatorsOutput)
             for (int i = 0; i < 2; i++)
             {
                 digitalWrite(BOMBAMEZCLA, 0);
-                sprayServo.write(45);
-                delay(1500);
-                sprayServo.write(0);
-                delay(1500);
+                spray();
             }
         }
         // Restaurar estado de la bomba
@@ -813,7 +838,7 @@ void checkLight(float resistorValue, float lightSensorValue)
     {
         if (lightSensorValue > LUX_THRESHOLD)
         {
-            if (resistorValue < RESISTOR_THRESHOLD)
+            if (resistorValue > RESISTOR_THRESHOLD)
             {                                                   // Asegurarse de que el valor de la resistencia sea valido
                 lightHours += (getTime() - startLight);         // Acumula el tiempo en segundos
                 hours = lightHours / static_cast<float>(36000); // Paso a horas
@@ -871,12 +896,11 @@ void adjustLED(float lightfuzzyOutput)
 
 void checkLUM()
 {
-    // Solo ejecutar si el modo de control del led es automático
-
     float lightSensorValue = dataSensorsInfo[6];
     float resistorValue = dataSensorsInfo[4];
     checkLight(resistorValue, lightSensorValue);
     float lhours = hours;
+    // Solo ejecutar si el modo de control del led es automático
     if (manualORautoLed == 0)
     {
         fuzzyLIGHT->setInput(1, lightSensorValue);
@@ -1179,18 +1203,33 @@ void controlLiquidos()
         statusPumps[4] = 0;
         statusPumps[5] = 0;
 
-        // BLOQUE 1
-        if (dataSensorsInfo[7] == 0)
-        { // Si no hay agua minima en el tanque de mezcla
+        // ### BLOQUE 1 (TANQUE RESIDUOS) ###
+        if (dataSensorsInfo[9] == 1) // Si el tanque de residuos esta al maximo 
+        { 
+            digitalWrite(BOMBARES, 1);
+            statusPumps[5] = 1;
+            time = millis();
+            // Desaguar durante 10 segundos o hasta que no esté al máximo
+            while (millis() - time < 10000 && dataSensorsInfo[9] == 1)
+            {
+                leerSensorRes();
+            }
+            digitalWrite(BOMBARES, 0);
+            statusPumps[5] = 0;
+        }
+
+        // ### BLOQUE 2 (TANQUE DE MEZCLA) ###
+        if (dataSensorsInfo[7] == 0) // Si no hay agua minima en el tanque de mezcla
+        {
             digitalWrite(BOMBAACIDA, 1);
             digitalWrite(BOMBAALCALINA, 1);
             digitalWrite(BOMBANUTRIENTES, 1);
             statusPumps[0] = 1;
             statusPumps[1] = 1;
             statusPumps[3] = 1;
-            // Se llena el agua del tanque de mezcla hasta que esté al mínimo o pasen 10 segundos
+            // Se llena el agua del tanque de mezcla hasta que llegue al mínimo o pasen 10 segundos
             while (millis() - time < 10000 || dataSensorsInfo[7] == 0)
-            { 
+            {
                 leerSensorMinMez();
             }
             digitalWrite(BOMBANUTRIENTES, 0);
@@ -1201,28 +1240,14 @@ void controlLiquidos()
             statusPumps[3] = 0;
         }
 
-        // BLOQUE 2
-        if (dataSensorsInfo[9] == 1)
-        { // Si el tanque de residuos esta al maximo desaguar durante 10 segundos
-            digitalWrite(BOMBARES, 1);
-            statusPumps[5] = 1;
-            time = millis();
-            while (millis() - time < 10000 || dataSensorsInfo[9] == 1)
-            {
-                leerSensorRes();
-            }
-            digitalWrite(BOMBARES, 0);
-            statusPumps[5] = 0;
-        }
-
-        // BLOQUE 3
-        if (dataSensorsInfo[8] == 1)
-        { // Si el tanque de mezcla esta al maximo desaguar del tanque de mezcla al tanque de residuos y vaciar también el tanque de residuos
+        if (dataSensorsInfo[8] == 1) // Si el tanque de mezcla esta al maximo
+        { 
             digitalWrite(BOMBAMEZCLARES, 1);
             digitalWrite(BOMBARES, 1);
             statusPumps[4] = 1;
             statusPumps[5] = 1;
             time = millis();
+            // Desaguar del tanque de mezcla al tanque de residuos y vaciar también el tanque de residuos
             while ((millis() - time) < 10000 || dataSensorsInfo[8] == 1)
             {
                 leerSensorMaxMez();
@@ -1233,107 +1258,52 @@ void controlLiquidos()
             statusPumps[5] = 0;
         }
 
-        // BLOQUE 4
-        while (optimo == 0)
+        if (dataSensorsInfo[8] == 0) // Si el tanque de mezcla no está al máximo
         {
-            if (dataSensorsInfo[8] == 1) // Si el tanque de mezcla esta al maximo
-            {
-                digitalWrite(BOMBAMEZCLARES, 1);
-                digitalWrite(BOMBARES, 1);
-                statusPumps[4] = 1;
-                statusPumps[5] = 1;
-                time = millis();
-                while (millis() - time < 10000 || (dataSensorsInfo[8] == 1))
-                {
-                    leerSensorMaxMez();
-                }
-                digitalWrite(BOMBAMEZCLARES, 0);
-                digitalWrite(BOMBARES, 0);
-                statusPumps[4] = 0;
-                statusPumps[5] = 0;
-                readingPHTDS();
-                checkPHTDS();
-                time = millis();
-                while ((millis() - time < 10000) && (dataSensorsInfo[8] == 0))
-                {
-                }
-                if (statusPumps[0] == 0 && statusPumps[1] == 0 && statusPumps[3] == 0)
-                {
-                    optimo = 1;
-                }
-                digitalWrite(BOMBANUTRIENTES, 0);
-                digitalWrite(BOMBAACIDA, 0);
-                digitalWrite(BOMBAALCALINA, 0);
-                statusPumps[0] = 0;
-                statusPumps[1] = 0;
-                statusPumps[3] = 0;
-            }
-            else if (dataSensorsInfo[8] == 0) // Si el tanque de mezcla no esta al maximo
-            {
-                readingPHTDS();
-                checkPHTDS();
-                time = millis();
-                while ((millis() - time < 10000) && (dataSensorsInfo[8] == 0))
-                {
-                }
-                if (statusPumps[0] == 0 && statusPumps[1] == 0 && statusPumps[3] == 0)
-                {
-                    optimo = 1;
-                }
-                digitalWrite(BOMBANUTRIENTES, 0);
-                digitalWrite(BOMBAACIDA, 0);
-                digitalWrite(BOMBAALCALINA, 0);
-                statusPumps[0] = 0;
-                statusPumps[1] = 0;
-                statusPumps[3] = 0;
-            }
-        }
-        if (dataSensorsInfo[8] == 1) // Si el tanque de mezcla esta al maximo
-        {
-            digitalWrite(BOMBAMEZCLARES, 1);
-            digitalWrite(BOMBARES, 1);
-            statusPumps[4] = 1;
-            statusPumps[5] = 1;
+            // Comprobación de pH y TDS y regulación de líquidos en el tanque de mezcla
             time = millis();
-            while (millis() - time < 10000 || (dataSensorsInfo[8] == 1))
+            // Si no se ha alcanzado el estado óptimo en 10 segundos sigue el programa para que no se quede paralizado
+            while ((millis() - time < 10000) && (dataSensorsInfo[8] == 0) && optimo == 0)
             {
-                leerSensorMaxMez();
+                readingPHTDS();
+                checkPHTDS();
+                if (statusPumps[0] == 0 && statusPumps[1] == 0 && statusPumps[3] == 0)
+                {
+                    optimo = 1; // Si las bombas ácida, alcalina y nutrientes no están activas se ha alcanzado el estado óptimo
+                }
+                delay(500);
             }
-            digitalWrite(BOMBAMEZCLARES, 0);
-            digitalWrite(BOMBARES, 0);
-            statusPumps[4] = 0;
-            statusPumps[5] = 0;
+            digitalWrite(BOMBANUTRIENTES, 0);
+            digitalWrite(BOMBAACIDA, 0);
+            digitalWrite(BOMBAALCALINA, 0);
+            statusPumps[0] = 0;
+            statusPumps[1] = 0;
+            statusPumps[3] = 0;
         }
-        // BLOQUE 5
+
+        // ### BLOQUE 3 (TANQUE DE PLANTACIÓN) ###
         if (dataSensorsInfo[10] == 1) // Si el tanque de platanción está al máximo
         {
+            // Se apaga la bomba de mezcla
             digitalWrite(BOMBAMEZCLA, 0);
             statusPumps[2] = 0;
         }
-        else if (dataSensorsInfo[10] == 0) // Si el tanque de plantación no está al máximo
+        else // Si el tanque de plantación no está al máximo
         {
             if (dataSensorsInfo[5] == 0) // Si el tanque de platanción no llega al mínimo
             {
-                counterMezcla = getTime();
-                digitalWrite(BOMBAMEZCLA, 1);
-                statusPumps[2] = 1;
-                time = millis();
-                while ((millis() - time < 10000) && (dataSensorsInfo[5] == 0) && (dataSensorsInfo[10] == 0) && (dataSensorsInfo[7] == 1))
-                {
-                }
-                digitalWrite(BOMBAMEZCLA, 0);
-                statusPumps[2] = 0;
-            }
-            else if (dataSensorsInfo[5] == 1) // Si el tanque de platanción llega al mínimo
-            {
-                if ((getTime() - counterMezcla) >= pumpUseInterval)
+                // Solo se bombeará el agua del tanque de mezcla a la plantación si se ha alcanzado el estado óptimo
+                if (optimo == 1)
                 {
                     counterMezcla = getTime();
                     digitalWrite(BOMBAMEZCLA, 1);
                     statusPumps[2] = 1;
                     time = millis();
+                    // Se llena el tanque hasta durante 10 segundos o hasta que llegue al máximo o el tanque de mezcla esté por debajo del mínimo
                     while ((millis() - time < 10000) && (dataSensorsInfo[10] == 0) && (dataSensorsInfo[7] == 1))
                     {
+                        leerSensorMaxPlan();
+                        leerSensorMinMez();
                     }
                     digitalWrite(BOMBAMEZCLA, 0);
                     statusPumps[2] = 0;
@@ -1413,9 +1383,7 @@ void sendData()
             String("Water Level Max Plan: ") + String(dataSensorsInfo[10]) + ", " +
             String("Water Level Min Mez: ") + String(dataSensorsInfo[7]) + ", " +
             String("Water Level Max Mez: ") + String(dataSensorsInfo[8]) + ", " +
-            String("Water Level Max Res: ") + String(dataSensorsInfo[9])
-        );
-
+            String("Water Level Max Res: ") + String(dataSensorsInfo[9]));
 
         int httpResponseCode = http.POST(jsonData);
 
@@ -1588,11 +1556,8 @@ void handleBombaResiduos()
 // Al recibir la petición activa el spray
 void handleSpray()
 {
+    spray();
     Serial.println("Spray activado");
-    sprayServo.write(45);
-    delay(1000);
-    sprayServo.write(0);
-    delay(1000);
     server.send(200, "application/json", "{\"mensaje\":\"Spray activado correctamente\"}");
 }
 
@@ -1607,7 +1572,7 @@ void handleSelectControlMode()
 // Recibe el tiempo en segundos para el intervalo de activación de la bomba con el formato {value: "valor"}
 void handleAjustePumpAutoUse()
 {
-    pumpUseInterval = extractValues().toFloat(); 
+    pumpUseInterval = extractValues().toFloat();
     counterMezcla = getTime();
     preferences.begin("PumpInterval", false);
     preferences.putFloat("pumpUseIntervalRange", pumpUseInterval);
@@ -1625,10 +1590,7 @@ void handleAjusteSprayUse()
     preferences.putFloat("sprayUseIntervalRange", sprayUseInterval);
     preferences.end();
     digitalWrite(BOMBAMEZCLA, 0);
-    sprayServo.write(45);
-    delay(1000);
-    sprayServo.write(0);
-    delay(1000);
+    spray();
     digitalWrite(BOMBAMEZCLA, statusPumps[2]);
     Serial.println("Intervalo de activación del spray: " + String(sprayUseInterval));
     server.send(200, "application/json", "{\"mensaje\":\"Ajuste de intervalo de activación del spray actualizado\"}");
@@ -1856,6 +1818,8 @@ void handleModeLed()
 {
     manualORautoLed = (manualORautoLed + 1) % 2;
     Serial.println("Modo de control de la tira Led: " + String(manualORautoLed));
+    ledcWrite(LED_CHANNEL, 0);
+    powerLed = 0;
     server.send(200, "application/json", "{\"manualORautoLed\":\"" + String(manualORautoLed) + "\"}");
 }
 
@@ -1863,6 +1827,8 @@ void handleModeFan()
 {
     manualORautoFan = (manualORautoFan + 1) % 2;
     Serial.println("Modo de control de los ventiladores " + String(manualORautoFan));
+    ledcWrite(FAN_CHANNEL, 0);
+    powerFan = 0;
     server.send(200, "application/json", "{\"manualORautoFan\":\"" + String(manualORautoFan) + "\"}");
 }
 
@@ -1870,6 +1836,8 @@ void handleModeHeater()
 {
     manualORautoHeater = (manualORautoHeater + 1) % 2;
     Serial.println("Modo de control del calentador: " + String(manualORautoHeater));
+    ledcWrite(HEATER_CHANNEL, 0);
+    powerHeater = 0;
     server.send(200, "application/json", "{\"manualORautoHeater\":\"" + String(manualORautoHeater) + "\"}");
 }
 
@@ -1944,13 +1912,21 @@ void handleTiempoActBombaAuto()
     }
 }
 
+//--------------------------------------------------------------
+// Tarea para gestionar el servidor específico en un hilo aparte
+// -------------------------------------------------------------
+
+void handleClientTask(void* parameter) {
+  for (;;) {
+    server.handleClient();
+    vTaskDelay(1);
+  }
+}
+
 // SETUP inicial del sistema
 void setup()
 {
     Serial.begin(9600);
-
-    // Conectamos el servo al PIN y ajustamos su posicion inicial a 0 y ultima a 45
-    sprayServo.attach(SPRAY);
 
     // Establecemos los PINS que correspondan
     pinMode(WATERQUALITYSENSORPIN, INPUT_PULLDOWN);
@@ -1982,13 +1958,9 @@ void setup()
     ledcAttachPin(LED, LED_CHANNEL);
     ledcWrite(LED_CHANNEL, 0); // OFF
 
-    delay(5000);
-    sprayServo.write(0);
-
-
     // Conectamos el calentador y el ventilador a sus PINES correspondientes y los apagamos
     pinMode(FAN, OUTPUT);
-    ledcSetup(FAN_CHANNEL, 1000, 8);
+    ledcSetup(FAN_CHANNEL, 250, 8);
     ledcAttachPin(FAN, FAN_CHANNEL);
     ledcWrite(FAN_CHANNEL, 0); // OFF
 
@@ -2051,6 +2023,11 @@ void setup()
     // Inicializamos el servidor
     server.begin();
     Serial.println("Servidor web inicializado");
+
+    // Conectamos el servo al PIN y ajustamos su posicion inicial a 0 y ultima a 45
+    sprayServo.attach(SPRAY);
+    // Ejecutamos una pulverización inicial
+    spray();
 
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
     lastChronoOn = getTime();
@@ -2131,10 +2108,17 @@ void setup()
     setFuzzyLUM();
     setFuzzyTEMP();
 
-    // Realizamos una pulverizacion inicial
-    checkSprayUse(0);
+    // Iniciamos el servidor en un hilo aparte
+    xTaskCreatePinnedToCore(
+        handleClientTask,   // Función
+        "WebServerTask",    // Nombre
+        4096,               // Stack
+        NULL,               // Parámetro
+        1,                  // Prioridad
+        NULL,               // Handle (opcional)
+        0                   // Núcleo donde se ejecuta (0 o 1)
+    );
 }
-
 
 //----------------
 // LOOP del sistema
@@ -2142,38 +2126,37 @@ void setup()
 
 void loop()
 {
-    server.handleClient();
-
-    // Lectura de los niveles de agua en el sistema
-    leerSensorMinPlan(); // dataSensorsInfo[5]   |
-    leerSensorMaxPlan(); // dataSensorsInfo[10]  |
-    leerSensorMinMez();  // dataSensorsInfo[7]   |-- Water lvl
-    leerSensorMaxMez();  // dataSensorsInfo[8]   |
-    leerSensorRes();     // dataSensorsInfo[9]   |
-    // Lecturas de luz
+    leerSensorMinPlan();    // dataSensorsInfo[5]   |
+    leerSensorMaxPlan();    // dataSensorsInfo[10]  |
+    leerSensorMinMez();     // dataSensorsInfo[7]   |-- Water lvl
+    leerSensorMaxMez();     // dataSensorsInfo[8]   |
+    leerSensorRes();        // dataSensorsInfo[9]   |
     lightResistorReading(); // dataSensorsInfo[4] (LIGHT RESISTOR)
     lightSensorReading();   // dataSensorsInfo[6] (LIGHT)
-    // Lecturas de temperatura
-    tempReading(); // dataSensorsInfo[2] (TEMP)
-    // Lecturas de humedad
-    humidityReading(); // dataSensorsInfo[3] (HUM)
-    readingPHTDS(); // dataSensorsInfo[0] (PH) y dataSensorsInfo[1] (TDS)
-    // Lecturas de ph y waterQuality junto con el control de bombas
-    controlLiquidos(); // dataSensorsInfo[0] (PH) y dataSensorsInfo[1] (TDS)
+    tempReading();          // dataSensorsInfo[2] (TEMP)
+    humidityReading();      // dataSensorsInfo[3] (HUM)
+    readingPHTDS();         // dataSensorsInfo[0] (PH) y dataSensorsInfo[1] (TDS)
 
     // Enviar datos cada 5 segundos
     unsigned long currentTime = millis();
     if (currentTime - lastDataSendTime >= 5000)
     {
         sendData();
-        lastDataSendTime = currentTime;
+        lastDataSendTime = millis();
     }
 
     // Lectura y evaluación de los sistemas de lógica difusa
+    // Dado que el control de líquidos paraliza en gran medida el esistema, se ejecutará el control de líquidos cada 10 segundos, 
+    // dando así tiempo al resto de sistemas difusos a ejecutarse y a las peticiones del servidor web
+    if (currentTime - lastLiquidControlTime >= 10000)
+    {
+        controlLiquidos(); // Control de bombas
+        lastLiquidControlTime = millis();
+    }
     checkTEMP();
     checkHUM();
     checkLUM();
     ifDayChanged();
 
-    delay(1000);
+    delay(500);
 }

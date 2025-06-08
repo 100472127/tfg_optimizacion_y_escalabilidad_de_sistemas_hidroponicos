@@ -50,7 +50,7 @@ export default function CoolHeatLed() {
 					setHeaterPower(currentData?.powerHeater);
 				}
             }
-        }, 10000);
+        }, 5000);
 
         // Limpiar el intervalo cuando el componente se desmonte
         return () => {
@@ -73,10 +73,13 @@ export default function CoolHeatLed() {
         let mode = 0;
         if (actuator == "Led") {
             mode = ledMode == 0 ? 1 : 0;
+            setLedPower(0);
         } else if (actuator == "Fan") {
             mode = fanMode == 0 ? 1 : 0;
+            setFanPower(0);
         } else if (actuator == "Heater") {
             mode = heaterMode == 0 ? 1 : 0;
+            setHeaterPower(0);
         }
         axios.post(urlPost, { value: mode.toString()})
         .then(response => {

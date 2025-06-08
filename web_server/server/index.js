@@ -367,9 +367,8 @@ app.post('/powerHeater/:id', async (req, res) => {
 app.get('/horasLuz/:id', async (req, res) => {
     const controllerID = req.params.id;  // Obtener el ID del controlador desde la URL
     const dataToSend = req.body;         // Obtener los datos del cuerpo de la petición
-    //const result = await sendPetition("GET", controllerID, dataToSend, "/horasLuz");  // Esperar el resultado de sendPost
-    //res.status(result === "ERROR" ? 500 : 200).send(result);
-    res.status(200).send("{\"horasLuz\": \"59955\"}"); // Enviar respuesta al microcontrolador
+    const result = await sendPetition("GET", controllerID, dataToSend, "/horasLuz");  // Esperar el resultado de sendPost
+    res.status(result === "ERROR" ? 500 : 200).send(result);
 });
 
 // Temporizador del spray

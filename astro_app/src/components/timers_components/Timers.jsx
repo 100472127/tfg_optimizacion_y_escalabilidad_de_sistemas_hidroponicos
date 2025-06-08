@@ -133,7 +133,6 @@ export default function Timers(){
                 axios.post(urlPost, { value: seconds })
                 .then(response => {
                     console.log(`Pump timer establecido: ${seconds}`);
-                    console.log("URL: ", urlPost);
                 })
                 .catch(error => {
                     console.error(`Error al establecer el pump timer`, error);
@@ -160,8 +159,6 @@ export default function Timers(){
             axios.post(urlPost, { value: seconds })
             .then(response => {
                 console.log(`Spray timer establecido: ${seconds}`);
-                console.log("URL: ", urlPost);
-
             })
             .catch(error => {
                 console.error(`Error al establecer el spray timer`, error);
