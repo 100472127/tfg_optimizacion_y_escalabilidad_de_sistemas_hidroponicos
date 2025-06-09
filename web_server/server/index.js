@@ -13,7 +13,7 @@ const app = express();
 // Permitimos peticiones desde la URL donde se alojará la página web hecha con astro
 const allowedOrigins = [
     'http://localhost:4321', // URL de desarrollo
-    'http://192.168.73.200:4321', // URL de producción (Raspberry Pi)
+    'http://192.168.73.188:4321', // URL de producción (Raspberry Pi)
 ];
 app.use(cors({
     origin: function (origin, callback) {

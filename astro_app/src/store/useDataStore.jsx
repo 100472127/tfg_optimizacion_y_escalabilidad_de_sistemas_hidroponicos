@@ -10,7 +10,7 @@ const useDataStore = create((set) => ({
     setActualController: (newController) => set({ actualController: newController }),
 
     // Ip y puerto del servidor Node.js que corre en la Raspberry Pi
-    url: "http://localhost:3000", 
+    url: "http://192.168.73.188:3000", 
 
     // Variable para compartir el estado de manualORauto entre los componetes de los timers y el control de bombas
     manualORauto: null,
